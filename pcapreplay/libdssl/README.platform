@@ -1,0 +1,23 @@
+In order to build on various platforms, the following CFLAGS should be used:
+
+(NOTE: we should probably integrate this into configure.in)
+
+AIX
+---
+
+CFLAGS="-DOLD_IPV6=1"
+
+SOLARIS 8
+---------
+
+CFLAGS="-DSOLARIS2=8 -DOLD_IPV6=1"
+
+SOLARIS 9
+---------
+ 
+CFLAGS="-DSOLARIS2=9 -DOLD_IPV6=1"
+
+SOLARIS 10
+----------
+
+CFLAGS="-DSOLARIS2=10 -DHAVE_NETINET_IP_COMPAT_H=1"
