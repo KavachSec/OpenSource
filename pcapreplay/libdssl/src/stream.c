@@ -880,7 +880,9 @@ int StreamProcessPacket( TcpStream* stream, DSSL_Pkt* pkt, int* new_ack )
 			/* must be at least one packet in the queue */
 			_ASSERT( stream->pktHead );
 
-			if ((PKT_TCP_SEQ( stream->pktHead ) > stream->nextSeqExpected) || IsPacketTimeout(stream, pkt, &stream->pktHead->pcap_header.ts)) {
+                        if(stream->pktHead == NULL){
+                              rc = NM_ERROR( DSSL_E_TCP_MISSING_PACKET_DETECTED );
+                        } else if ((PKT_TCP_SEQ( stream->pktHead ) > stream->nextSeqExpected) || IsPacketTimeout(stream, pkt, &stream->pktHead->pcap_header.ts)) {
 				len = PKT_TCP_SEQ( stream->pktHead ) - stream->nextSeqExpected;
 				
 				#ifdef NM_TRACE_TCP_STREAMS
