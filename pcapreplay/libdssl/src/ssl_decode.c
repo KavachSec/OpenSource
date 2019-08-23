@@ -104,7 +104,6 @@ static int ssl_decrypt_record( dssl_decoder_stack* stack, u_char* data, uint32_t
 	int block_size;
 	const EVP_CIPHER* c = NULL;
 
-
 	_ASSERT( stack );
 	_ASSERT( stack->sess );
 	_ASSERT( stack->cipher );
@@ -120,7 +119,8 @@ static int ssl_decrypt_record( dssl_decoder_stack* stack, u_char* data, uint32_t
 	DEBUG_TRACE3( "using cipher %s (mode=%u, block=%u)\n", EVP_CIPHER_name(c), stack->sess->cipher_mode, block_size );
 	if( block_size != 1 )
 	{
-		if( len == 0 || (len % block_size) != 0 )
+		//if( len == 0 || (len % block_size) != 0 ) //kiran temp
+		if( len == 0 )
 		{
 			return NM_ERROR( DSSL_E_SSL_DECRYPTION_ERROR );
 		}
@@ -155,10 +155,11 @@ static int ssl_decrypt_record( dssl_decoder_stack* stack, u_char* data, uint32_t
 		data += EVP_GCM_TLS_EXPLICIT_IV_LEN;
 		len -= EVP_GCM_TLS_EXPLICIT_IV_LEN;
 	}
+        /*
 	rc = EVP_Cipher(stack->cipher, buf, data, len );
 
 	buf_len = len;
-	/* strip the padding */
+
 	if( block_size != 1 )
 	{
 		if( buf[len-1] >= buf_len - 1 ) return NM_ERROR( DSSL_E_SSL_DECRYPTION_ERROR );
@@ -167,7 +168,6 @@ static int ssl_decrypt_record( dssl_decoder_stack* stack, u_char* data, uint32_t
 	
 	DEBUG_TRACE_BUF("decrypted", buf, buf_len);
 	
-	/* ignore auth tag, which is 16 (for CCM/GCM) or 8 (for CCM-8) bytes */
 	if ( EVP_CIPH_GCM_MODE == stack->sess->cipher_mode || EVP_CIPH_CCM_MODE == stack->sess->cipher_mode )
 	{
 		if (NULL == stack->sess->dssl_cipher_suite->extra_info)
@@ -177,7 +177,17 @@ static int ssl_decrypt_record( dssl_decoder_stack* stack, u_char* data, uint32_t
 	}
 
 	*out = buf;
-	*out_len = buf_len;
+	*out_len = buf_len; */
+
+        //kiran
+        buf_len = 0;
+        rc = EVP_CipherUpdate(stack->cipher, buf, &buf_len, data, len);
+        printf("---> kiran 1. ... start: %d: %d, rc:%d\n", len, buf_len, rc);
+	DEBUG_TRACE_BUF("decrypted", buf, buf_len);
+        //rc = EVP_CipherFinal_ex(stack->cipher, buf, &buf_len);
+        //printf("---> kiran 3. ... start: %d: %d, rc:%d\n", len, buf_len, rc);
+        *out = buf;
+        *out_len = buf_len;
 
 	return DSSL_RC_OK;
 }
@@ -277,7 +287,9 @@ int ssl3_record_layer_decoder( void* decoder_stack, NM_PacketDir dir,
 		u_char mac[EVP_MAX_MD_SIZE*2];
 		u_char* rec_mac = NULL;
 		int l = EVP_MD_size( stack->md );
-		int ivl = EVP_CIPHER_iv_length( stack->cipher->cipher );
+		int ivl = EVP_CIPHER_iv_length( stack->cipher);
+
+                printf("----> kiran: stack->sess->cipher_mode: %d\n", stack->sess->cipher_mode);
 
 		if ( EVP_CIPH_CBC_MODE == stack->sess->cipher_mode || EVP_CIPH_STREAM_CIPHER == stack->sess->cipher_mode )
 			recLen -= l;

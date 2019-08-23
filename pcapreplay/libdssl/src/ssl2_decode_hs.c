@@ -19,6 +19,8 @@
 **
 */
 
+#ifdef SUPPORT_SSL2
+
 #include "stdinc.h"
 #include "string.h"
 #include "ssl_session.h"
@@ -512,3 +514,5 @@ int ssl2_decode_handshake( DSSL_Session* sess, NM_PacketDir dir,
 
 	return rc;
 }
+
+#endif

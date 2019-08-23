@@ -78,9 +78,9 @@ struct DSSL_Session_
 
 	u_char				compression_method;
 
-	EVP_MD_CTX			handshake_digest_sha;
-	EVP_MD_CTX			handshake_digest_md5;
-	EVP_MD_CTX			handshake_digest;
+	EVP_MD_CTX			*handshake_digest_sha;
+	EVP_MD_CTX			*handshake_digest_md5;
+	EVP_MD_CTX			*handshake_digest;
 
 	int (*decode_finished_proc)( struct DSSL_Session_* sess, NM_PacketDir dir, u_char* data, uint32_t len );
 	int (*caclulate_mac_proc)( dssl_decoder_stack* stack, u_char type, u_char* data, 

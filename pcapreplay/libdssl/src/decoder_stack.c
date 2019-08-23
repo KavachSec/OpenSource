@@ -96,11 +96,13 @@ int dssl_decoder_stack_set( dssl_decoder_stack* d, DSSL_Session* sess, uint16_t 
 		dssl_decoder_init( &d->dalert, ssl3_alert_decoder, d );
 		break;
 
+        #ifdef SUPPORT_SSL2
 	case SSL2_VERSION:
 		dssl_decoder_init( &d->drecord, ssl2_record_layer_decoder, d );
 		dssl_decoder_init( &d->dhandshake, ssl2_handshake_record_decode_wrapper, d );
 		dssl_decoder_init( &d->dappdata, ssl_application_data_decoder, d );
 		break;
+        #endif
 
 	default:
 		rc = NM_ERROR( DSSL_E_SSL_UNKNOWN_VERSION );
