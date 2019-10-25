@@ -402,7 +402,6 @@ int ssl3_record_layer_decoder( void* decoder_stack, NM_PacketDir dir,
 	if( rc == DSSL_RC_OK )
 	{
 		_ASSERT( next_decoder != NULL );
-
 		rc = dssl_decoder_process( next_decoder, dir, data, recLen );
 	}
 

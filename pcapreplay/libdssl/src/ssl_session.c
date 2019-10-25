@@ -248,10 +248,10 @@ int ssls_decode_master_secret( DSSL_Session* sess )
 
 			//The tls1.h that is being used for build, doesn't have macro TLS_MD_EXTENDED_MASTER_SECRET_CONST
 			rc = tls12_PRF( EVP_get_digestbyname( suite->digest ), sess->PMS, SSL_MAX_MASTER_KEY_LENGTH,
-								"extended master secret",
-								md_value, md_len,
-								NULL, 0,
-								sess->master_secret, sizeof( sess->master_secret ) );
+					"extended master secret",
+					md_value, md_len,
+					NULL, 0,
+					sess->master_secret, sizeof( sess->master_secret ) );
 		}
 		else
 		{
