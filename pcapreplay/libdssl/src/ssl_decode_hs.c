@@ -60,6 +60,8 @@ static const char* SSL3_ExtensionTypeToString( int ext_type )
 		case 0x000a: return "elliptic_curves";
 		case 0x000b: return "ec_point_format";
 		case 0x0023: return "Session Ticket TLS";
+		case 0x0016: return "Encrypt-Then-MAC";
+		case 0x0017: return "Extended Master Secret";
 		default:
 			sprintf(buff, "Unknown (%x)", ext_type);
 			return buff;
@@ -252,9 +254,21 @@ static int ssl3_decode_server_hello( DSSL_Session* sess, u_char* data, uint32_t 
 			#endif
 
 			/* TLS Session Ticket extension found, set the flag */
-			if( ext_type == 0x0023)
+			if( ext_type == 0x0023 )
 			{
 				sess->flags |= SSF_TLS_SERVER_SESSION_TICKET;
+			}
+
+			/* Encrypt-Then-MAC */
+			if ( ext_type == 0x0016 )
+			{
+				sess->flags |= SSF_TLS_SERVER_ENCRYPT_THEN_MAC;
+			}
+
+			/* Extended Master Secret Key */
+			if ( ext_type == 0x0017 )
+			{
+				sess->flags |= SSF_TLS_SERVER_EXTENDED_MASTER_SECRET_KEY;
 			}
 
 			data += ext_len + 4;
@@ -679,6 +693,8 @@ int ssl3_decode_handshake_record( dssl_decoder_stack* stack, NM_PacketDir dir,
 	_ASSERT( processed != NULL );
 	_ASSERT((sess->flags & SSF_SSLV2_CHALLENGE) == 0);
 
+	int update_digest = 1;
+
 	if( sess->version == 0 )
 	{
 		return ssl_decode_first_client_hello( sess, data, len, processed );
@@ -730,6 +746,14 @@ int ssl3_decode_handshake_record( dssl_decoder_stack* stack, NM_PacketDir dir,
 		break;
 
 	case SSL3_MT_CLIENT_KEY_EXCHANGE:
+		//Need to revist, to check if we can move ssl3_update_handshake_digests before calling
+		//decode in all the cases.
+		if ( sess->flags & SSF_TLS_SERVER_EXTENDED_MASTER_SECRET_KEY )
+		{
+			ssl3_update_handshake_digests(sess, org_data, recLen + SSL3_HANDSHAKE_HEADER_LEN);
+			EVP_MD_CTX_copy(&sess->handshake_digest_ex, &sess->handshake_digest);
+			update_digest = 0;
+		}
 		rc = ssl3_decode_client_key_exchange( sess, data, recLen );
 		break;
 
@@ -778,7 +802,7 @@ int ssl3_decode_handshake_record( dssl_decoder_stack* stack, NM_PacketDir dir,
 			ssl3_init_handshake_digests( sess );
 		}
 
-		if( hs_type != SSL3_MT_HELLO_REQUEST )
+		if( ( hs_type != SSL3_MT_HELLO_REQUEST ) &&  ( update_digest == 1 ) )
 		{
 			ssl3_update_handshake_digests( sess, org_data, *processed );
 		}

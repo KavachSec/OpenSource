@@ -103,6 +103,8 @@ static int ssl_decrypt_record( dssl_decoder_stack* stack, u_char* data, uint32_t
 	int rc = DSSL_RC_OK;
 	int block_size;
 	const EVP_CIPHER* c = NULL;
+	const EVP_MD* md = NULL;
+	uint32_t mac_size = 0;
 
 
 	_ASSERT( stack );
@@ -117,7 +119,15 @@ static int ssl_decrypt_record( dssl_decoder_stack* stack, u_char* data, uint32_t
 	c = EVP_CIPHER_CTX_cipher( stack->cipher );
 	block_size = EVP_CIPHER_block_size( c );
 
-	DEBUG_TRACE3( "using cipher %s (mode=%u, block=%u)\n", EVP_CIPHER_name(c), stack->sess->cipher_mode, block_size );
+	if ( stack->sess->flags & SSF_TLS_SERVER_ENCRYPT_THEN_MAC )
+	{
+		md = stack->md;
+		if( md == NULL ) return NM_ERROR( DSSL_E_INVALID_PARAMETER );
+		mac_size = EVP_MD_size( md );
+		len -= mac_size;
+	}
+
+	DEBUG_TRACE4( "using cipher %s (mode=%u, block=%u), len: %d\n", EVP_CIPHER_name(c), stack->sess->cipher_mode, block_size, len);
 	if( block_size != 1 )
 	{
 		if( len == 0 || (len % block_size) != 0 )
@@ -158,13 +168,39 @@ static int ssl_decrypt_record( dssl_decoder_stack* stack, u_char* data, uint32_t
 	rc = EVP_Cipher(stack->cipher, buf, data, len );
 
 	buf_len = len;
+
 	/* strip the padding */
 	if( block_size != 1 )
 	{
 		if( buf[len-1] >= buf_len - 1 ) return NM_ERROR( DSSL_E_SSL_DECRYPTION_ERROR );
 		buf_len -= buf[len-1] + 1;
 	}
-	
+
+	if ( stack->sess->flags & SSF_TLS_SERVER_ENCRYPT_THEN_MAC )
+	{
+		if ( ( buf_len - block_size ) <= 0 )
+		{
+			NM_ERROR( DSSL_E_SSL_DECRYPTION_ERROR );
+		}
+
+		//Need to revisit, since we are copying the buffer to a temporary buffer and
+		//recopying it from new offset, Note buf address cannot be changed
+		//Need to check if there is any better way to do the same.
+		u_char *tbuf = malloc(sizeof(u_char) * buf_len);
+
+		if ( tbuf != NULL )
+		{
+			memcpy(tbuf, buf, buf_len);
+			buf_len -= block_size;
+			memcpy(buf, tbuf + block_size, buf_len);
+			free(tbuf);
+		}
+		else
+		{
+			return NM_ERROR( DSSL_E_OUT_OF_MEMORY );
+		}
+	}
+
 	DEBUG_TRACE_BUF("decrypted", buf, buf_len);
 	
 	/* ignore auth tag, which is 16 (for CCM/GCM) or 8 (for CCM-8) bytes */
@@ -221,6 +257,10 @@ int ssl3_record_layer_decoder( void* decoder_stack, NM_PacketDir dir,
 	dssl_decoder* next_decoder = NULL;
 	int decrypt_buffer_aquired = 0;
 	int decompress_buffer_aquired = 0;
+	int block_size = 0;
+	const EVP_CIPHER* c = NULL;
+	u_char *org_data = NULL;
+	uint32_t org_data_len = 0;
 
 	_ASSERT( stack );
 	_ASSERT( processed );
@@ -252,6 +292,8 @@ int ssl3_record_layer_decoder( void* decoder_stack, NM_PacketDir dir,
 
 	data += SSL3_HEADER_LEN;
 	len -= SSL3_HEADER_LEN;
+	org_data = data;
+	org_data_len = len;
 
 #ifdef NM_TRACE_SSL_RECORD
 	DEBUG_TRACE3( "\n==>Decoding SSL v3 Record from %s, type: %d, len: %d\n{\n", ((dir == ePacketDirFromClient)?"client":"server"), (int) record_type, (int) recLen );
@@ -279,9 +321,16 @@ int ssl3_record_layer_decoder( void* decoder_stack, NM_PacketDir dir,
 		int l = EVP_MD_size( stack->md );
 		int ivl = EVP_CIPHER_iv_length( stack->cipher->cipher );
 
-		if ( EVP_CIPH_CBC_MODE == stack->sess->cipher_mode || EVP_CIPH_STREAM_CIPHER == stack->sess->cipher_mode )
-			recLen -= l;
-		rec_mac = data+recLen;
+		if ( stack->sess->flags & SSF_TLS_SERVER_ENCRYPT_THEN_MAC )
+		{
+			rec_mac = org_data + ( org_data_len - l );
+		}
+		else
+		{
+			if ( EVP_CIPH_CBC_MODE == stack->sess->cipher_mode || EVP_CIPH_STREAM_CIPHER == stack->sess->cipher_mode )
+				recLen -= l;
+			rec_mac = data+recLen;
+		}
 
 		memset(mac, 0, sizeof(mac) );
 		
@@ -300,12 +349,22 @@ int ssl3_record_layer_decoder( void* decoder_stack, NM_PacketDir dir,
 		/* AEAD ciphers have no mac */
 		if ( EVP_CIPH_CBC_MODE == stack->sess->cipher_mode || EVP_CIPH_STREAM_CIPHER == stack->sess->cipher_mode )
 		{
-			rc = stack->sess->caclulate_mac_proc( stack, record_type, data, recLen, mac );
+			if ( stack->sess->flags & SSF_TLS_SERVER_ENCRYPT_THEN_MAC )
+			{
+				rc = stack->sess->caclulate_mac_proc( stack, record_type,
+									org_data, org_data_len - l,
+									mac );
+			}
+			else
+			{
+				rc = stack->sess->caclulate_mac_proc( stack, record_type, data, recLen, mac );
+			}
 
 			if( rc == DSSL_RC_OK )
 			{
 				rc = memcmp( mac, rec_mac, l ) == 0 ? DSSL_RC_OK : NM_ERROR( DSSL_E_SSL_INVALID_MAC );
 			}
+
 		}
 	}
 

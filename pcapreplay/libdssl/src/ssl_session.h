@@ -48,6 +48,9 @@ struct DSSL_handshake_buffer_
 /* RFC 5077 TLS Session Ticket */
 #define SSF_TLS_SESSION_TICKET_SET		0x0020
 #define SSF_TLS_SERVER_SESSION_TICKET	0x0040
+#define SSF_TLS_SERVER_ENCRYPT_THEN_MAC 0x0080
+#define SSF_TLS_SERVER_EXTENDED_MASTER_SECRET_KEY 0x0100
+
 
 struct DSSL_Session_
 {
@@ -81,6 +84,7 @@ struct DSSL_Session_
 	EVP_MD_CTX			handshake_digest_sha;
 	EVP_MD_CTX			handshake_digest_md5;
 	EVP_MD_CTX			handshake_digest;
+	EVP_MD_CTX			handshake_digest_ex;
 
 	int (*decode_finished_proc)( struct DSSL_Session_* sess, NM_PacketDir dir, u_char* data, uint32_t len );
 	int (*caclulate_mac_proc)( dssl_decoder_stack* stack, u_char type, u_char* data, 

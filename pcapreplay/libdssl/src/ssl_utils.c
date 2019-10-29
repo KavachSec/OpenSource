@@ -155,7 +155,11 @@ int tls12_PRF( const EVP_MD *md, const u_char* secret, uint32_t secret_len, cons
 	p = seed;
 	memcpy( p, label, strlen( label ) ); p+= strlen( label );
 	memcpy( p, random1, random1_len ); p+= random1_len;
-	memcpy( p, random2, random2_len );
+
+	if ( ( random2 != NULL ) && ( random2_len > 0 ) )
+	{
+		memcpy( p, random2, random2_len );
+	}
 
 	DEBUG_TRACE_BUF("secret", secret, secret_len);
 	DEBUG_TRACE_BUF("seed", seed, seed_len);
