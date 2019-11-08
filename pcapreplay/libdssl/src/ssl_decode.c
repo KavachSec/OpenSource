@@ -335,7 +335,8 @@ int ssl3_record_layer_decoder( void* decoder_stack, NM_PacketDir dir,
 		memset(mac, 0, sizeof(mac) );
 		
 		/* TLS 1.1 and later: remove explicit IV for non-stream ciphers */
-		if ( EVP_CIPH_CBC_MODE == stack->sess->cipher_mode )
+		if ( ( EVP_CIPH_CBC_MODE == stack->sess->cipher_mode ) &&
+		     ( ( stack->sess->flags & SSF_TLS_SERVER_ENCRYPT_THEN_MAC ) == 0 ) )
 		{
 			if (stack->sess->version >= TLS1_1_VERSION )
 			{
