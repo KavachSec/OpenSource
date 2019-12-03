@@ -187,7 +187,7 @@ int CapEnvSetSSL_ServerInfoWithKey( CapEnv* env, const struct in_addr* ip_addres
 int CapEnvSetSSL_Port(CapEnv* env, uint16_t port[], uint16_t port_count)
 {
        if( env->ssl_env == NULL ) return NM_ERROR( DSSL_E_UNINITIALIZED_ARGUMENT );
-       return DSSL_EnvSetPortInfo(env, port, port_count); 
+       return DSSL_EnvSetPortInfo(env->ssl_env, port, port_count); 
         
 }
 

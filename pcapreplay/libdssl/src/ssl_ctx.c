@@ -292,41 +292,64 @@ int DSSL_EnvSetServerInfo( DSSL_Env* env, const struct in_addr* ip_address, uint
 
 int DSSL_EnvSetPortInfo( DSSL_Env* env, uint16_t port[], int port_count)
 {
+        DEBUG_TRACE1("Port count DSSL : %d\n", port_count);
 	int rc = DSSL_RC_OK;
         env->ssl_port = port; 
         env->port_count = port_count;
+        DEBUG_TRACE1("Port count ENV : %d\n", env->port_count);
         return rc;
 }
 
 /* find DSSL_ServerInfo in a table by ip:port */
-DSSL_ServerInfo* DSSL_EnvFindServerInfo( const DSSL_Env* env, struct in_addr ip_address, uint16_t port )
+DSSL_ServerInfo* DSSL_EnvFindServerInfo( DSSL_Env* env, struct in_addr ip_address, uint16_t port )
 {
+        DEBUG_TRACE1("Ip addred : %d\n",  ip_address);
 	int i, is_ssl_port = 0;
         DSSL_ServerInfo* ret_si = NULL;
+        ret_si = (DSSL_ServerInfo*) calloc( 1, sizeof( DSSL_ServerInfo ) );
+
 	for( i = 0; i < env->server_count; i++ )
 	{
 		DSSL_ServerInfo* si = env->servers[i];
 
 		if( INADDR_IP( si->server_ip ) == INADDR_IP( ip_address ) &&
-			port == si->port ) ret_si = si;
+			port == si->port ) 
+                {
+                       DEBUG_TRACE0("Found Server ...");
+                       ret_si = si;
+                       return ret_si;
+                }
 	}
 
+        DEBUG_TRACE1("ret si : %d\n", ret_si);
+        DEBUG_TRACE1("Sssl Port count : %d\n", env->port_count);
         for( i = 0; i < env->port_count; i++)
         {
+                DEBUG_TRACE2("SSL PORTS : %d Received Port : %d\n", env->ssl_port[i], port);
                 if( env->ssl_port[i] == port ) {
                        is_ssl_port = 1;
                        break;
                 }
         }
 
-        if( ( ret_si == NULL ) && is_ssl_port ) 
+        if( is_ssl_port ) 
         {
-                ret_si->server_ip = ip_address;
+                DEBUG_TRACE0("Adding new server \n");
+                DSSL_ServerInfo** new_servers = NULL;
+                new_servers = realloc( env->servers, (env->server_count + 1)*sizeof(*env->servers) );
+                if( new_servers == NULL ) return NM_ERROR( DSSL_E_OUT_OF_MEMORY );
+		memcpy( &ret_si->server_ip,  &ip_address, sizeof(ret_si->server_ip) ) ;
                 ret_si->port = port;
                 ret_si->pkey = env->pkey;
+
+                new_servers[env->server_count] = ret_si;
+                env->servers = new_servers;
+                env->server_count++;
+                DEBUG_TRACE1("Server count : %d\n", env->server_count);
+                return ret_si;
         }
 
-        return ret_si;
+        return NULL;
 }
 
 /* shallow key check by pointer comparision only */
