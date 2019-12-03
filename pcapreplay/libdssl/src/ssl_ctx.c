@@ -290,20 +290,43 @@ int DSSL_EnvSetServerInfo( DSSL_Env* env, const struct in_addr* ip_address, uint
 	return rc;
 }
 
+int DSSL_EnvSetPortInfo( DSSL_Env* env, uint16_t port[], int port_count)
+{
+	int rc = DSSL_RC_OK;
+        env->ssl_port = port; 
+        env->port_count = port_count;
+        return rc;
+}
 
 /* find DSSL_ServerInfo in a table by ip:port */
 DSSL_ServerInfo* DSSL_EnvFindServerInfo( const DSSL_Env* env, struct in_addr ip_address, uint16_t port )
 {
-	int i;
+	int i, is_ssl_port = 0;
+        DSSL_ServerInfo* ret_si = NULL;
 	for( i = 0; i < env->server_count; i++ )
 	{
 		DSSL_ServerInfo* si = env->servers[i];
 
 		if( INADDR_IP( si->server_ip ) == INADDR_IP( ip_address ) &&
-			port == si->port ) return si;
+			port == si->port ) ret_si = si;
 	}
 
-	return NULL;
+        for( i = 0; i < env->port_count; i++)
+        {
+                if( env->ssl_port[i] == port ) {
+                       is_ssl_port = 1;
+                       break;
+                }
+        }
+
+        if( ( ret_si == NULL ) && is_ssl_port ) 
+        {
+                ret_si->server_ip = ip_address;
+                ret_si->port = port;
+                ret_si->pkey = env->pkey;
+        }
+
+        return ret_si;
 }
 
 /* shallow key check by pointer comparision only */
@@ -336,6 +359,27 @@ int DSSL_AddSSLKey(DSSL_Env* env, EVP_PKEY* pkey)
 	++env->key_count;
 
 	return DSSL_RC_OK;
+}
+
+int DSSL_Add_Env_SSLKey(DSSL_Env* env, const char *keyfile, const char *password)
+{
+        int rc = DSSL_RC_OK;
+        EVP_PKEY *pkey = NULL;
+        
+        if ( !keyfile )
+                return NM_ERROR( DSSL_E_INVALID_PARAMETER );
+        
+        if ( !password ) 
+                password = "";
+        
+        rc = ServerInfo_LoadPrivateKey( &pkey, keyfile, password );
+        if( rc != DSSL_RC_OK )
+        {       
+                return rc;
+        }
+       
+        env->pkey = pkey; 
+        return rc;
 }
 
 int DSSL_MoveServerToMissingKeyList( DSSL_Env* env, DSSL_ServerInfo* si )

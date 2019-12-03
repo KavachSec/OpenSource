@@ -102,6 +102,7 @@ int CapEnvSetSSL_ServerInfoWithKey( CapEnv* env, const struct in_addr* ip_addres
 
 /* Add a known private key */
 int CapEnvAddSSLKey( CapEnv* env, EVP_PKEY* pkey);
+int CapEnvAddSSL_Env_Key( CapEnv* env, const char* keyfile, const char* password );
 
 DSSL_ServerInfo* CapEnvFindDSSL_ServerInfo( const CapEnv* env, const struct in_addr* server_ip, uint16_t server_port );
 

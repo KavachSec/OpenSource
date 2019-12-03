@@ -28,6 +28,7 @@
 extern "C" {
 #endif
 
+#define SSL_PORT_LEN 128
 /* DSSL_ServerInfo - maps server ip:port to SSL certificate, RSA private key file 
 	and key file password */
 
@@ -51,8 +52,12 @@ typedef struct _DSSL_Env
 	DSSL_SessionTicketTable*	ticket_cache;
 
 	EVP_PKEY**				keys;
+	EVP_PKEY*		pkey;
 	int						key_count;
 	int						keys_try_index; /* round-robin index of the first key to try */
+        //uint16_t ssl_port[SSL_PORT_LEN];
+        uint16_t *ssl_port;
+        uint16_t port_count;
 
 #ifndef NM_MULTI_THREADED_SSL
 	u_char			decompress_buffer[DSSL_MAX_RECORD_LENGTH];
@@ -75,6 +80,8 @@ int DSSL_EnvSetServerInfoWithKey( DSSL_Env* env, const struct in_addr* ip_addres
 int DSSL_EnvSetServerInfo( DSSL_Env* env, const struct in_addr* ip_address, uint16_t port, 
 			const char* keyfile, const char* password );
 
+int DSSL_EnvSetPortInfo( DSSL_Env* env, uint16_t port[], int port_count);
+
 /* looks up the server in the server list, and, if found, moves it to the missing 
 key server list. Return 1 if found, 0 otherwise */
 int DSSL_MoveServerToMissingKeyList( DSSL_Env* env, DSSL_ServerInfo* si );
@@ -94,6 +101,7 @@ void DSSL_ServerInfoFree( DSSL_ServerInfo* si );
 /* Add a RSA key to a known key list. 
 NOte: DSSL_Env takes over the memory management of pkey parameter */
 int DSSL_AddSSLKey(DSSL_Env* env, EVP_PKEY* pkey);
+int DSSL_Add_Env_SSLKey(DSSL_Env* env, const char *keyfile, const char *pwd);
 
 /* add a server to a list of servers for which there is no PK information available. 
 CapEnv will check new sessions against this list and ignore these servers' future traffic */
