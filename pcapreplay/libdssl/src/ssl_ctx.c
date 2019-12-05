@@ -87,10 +87,56 @@ static int ServerInfo_LoadPrivateKey( EVP_PKEY **pkey, const char *keyfile, cons
 	return rc;
 }
 
+DSSL_ServerInfo* DSSL_EnvAddServer_v2( DSSL_Env* env, struct in_addr ip_address, uint16_t port )
+{
+        int i, is_ssl_port = 0;
+        DSSL_ServerInfo* ret_si = NULL;
+        ret_si = (DSSL_ServerInfo*) calloc( 1, sizeof( DSSL_ServerInfo ) );
+        /* 
+           In server not found, and if received port present in ssl port list.
+           Create new server and add to existing list for future.
+           Return newly created server.
+        */
+
+        DEBUG_TRACE1("ssl Port count : %d\n", env->port_count);
+        for( i = 0; i < env->port_count; i++)
+        {
+                DEBUG_TRACE2("SSL PORTS : %d Received Port : %d\n", env->ssl_port[i], port);
+                if( env->ssl_port[i] == port ) {
+                       is_ssl_port = 1;
+                       break;
+                }
+        }
+
+        if( is_ssl_port )
+        {
+                DEBUG_TRACE0("Adding new server \n");
+                DSSL_ServerInfo** new_servers = NULL;
+                new_servers = realloc( env->servers, (env->server_count + 1)*sizeof(*env->servers) );
+                if( new_servers == NULL ) return NM_ERROR( DSSL_E_OUT_OF_MEMORY );
+
+                memcpy( &ret_si->server_ip,  &ip_address, sizeof(ret_si->server_ip) ) ;
+                ret_si->port = port;
+                ret_si->pkey = env->pkey;
+
+                new_servers[env->server_count] = ret_si;
+                env->servers = new_servers;
+                env->server_count++;
+                DEBUG_TRACE1("Server count : %d\n", env->server_count);
+                return ret_si;
+        }
+
+        return NULL;
+}
+
 
 DSSL_Session* DSSL_EnvCreateSession( DSSL_Env* env, struct in_addr dst_ip, uint16_t dst_port,
 									struct in_addr src_ip, uint16_t src_port)
 {
+
+        DEBUG_TRACE2("\nSRI : ==================\n\n%d - %d\n", src_ip, src_port);
+        DEBUG_TRACE2("\n%d - %d\n", dst_ip, dst_port);
+        DEBUG_TRACE0("\nSRI : ==================\n");
 	/* first try destination address as the first packet in a session usually 
 	comes from a client */
 	DSSL_ServerInfo* si = DSSL_EnvFindServerInfo( env, dst_ip, dst_port );
@@ -98,8 +144,14 @@ DSSL_Session* DSSL_EnvCreateSession( DSSL_Env* env, struct in_addr dst_ip, uint1
 	
 	/* no SSL server found at dst ip:port, try source ip:port before leaving si to be NULL,
 	which triggers SSL key auto-discover */
-	if(!si) si = DSSL_EnvFindServerInfo( env, src_ip, src_port );
-	
+	if(!si) {
+               si = DSSL_EnvFindServerInfo( env, src_ip, src_port );
+	}
+
+	if(!si) {
+               si = DSSL_EnvAddServer_v2( env, dst_ip, dst_port );
+	}
+
 	sess = malloc( sizeof( DSSL_Session) );
 	DSSL_SessionInit( env, sess, si );
 
@@ -201,7 +253,6 @@ int DSSL_EnvAddServer( DSSL_Env* env, DSSL_ServerInfo* server )
 	return DSSL_RC_OK;
 }
 
-
 int DSSL_EnvAddMissingKeyServerInfo( DSSL_Env* env, DSSL_ServerInfo* server )
 {
 	DSSL_ServerInfo** new_servers = NULL;
@@ -301,52 +352,15 @@ int DSSL_EnvSetPortInfo( DSSL_Env* env, uint16_t port[], int port_count)
 }
 
 /* find DSSL_ServerInfo in a table by ip:port */
-DSSL_ServerInfo* DSSL_EnvFindServerInfo( DSSL_Env* env, struct in_addr ip_address, uint16_t port )
+DSSL_ServerInfo* DSSL_EnvFindServerInfo( const DSSL_Env* env, struct in_addr ip_address, uint16_t port )
 {
-        DEBUG_TRACE1("Ip addred : %d\n",  ip_address);
-	int i, is_ssl_port = 0;
-        DSSL_ServerInfo* ret_si = NULL;
-        ret_si = (DSSL_ServerInfo*) calloc( 1, sizeof( DSSL_ServerInfo ) );
-
-	for( i = 0; i < env->server_count; i++ )
-	{
-		DSSL_ServerInfo* si = env->servers[i];
-
-		if( INADDR_IP( si->server_ip ) == INADDR_IP( ip_address ) &&
-			port == si->port ) 
-                {
-                       DEBUG_TRACE0("Found Server ...");
-                       ret_si = si;
-                       return ret_si;
-                }
-	}
-
-        DEBUG_TRACE1("ret si : %d\n", ret_si);
-        DEBUG_TRACE1("Sssl Port count : %d\n", env->port_count);
-        for( i = 0; i < env->port_count; i++)
+        int i;
+        for( i = 0; i < env->server_count; i++ )
         {
-                DEBUG_TRACE2("SSL PORTS : %d Received Port : %d\n", env->ssl_port[i], port);
-                if( env->ssl_port[i] == port ) {
-                       is_ssl_port = 1;
-                       break;
-                }
-        }
+                DSSL_ServerInfo* si = env->servers[i];
 
-        if( is_ssl_port ) 
-        {
-                DEBUG_TRACE0("Adding new server \n");
-                DSSL_ServerInfo** new_servers = NULL;
-                new_servers = realloc( env->servers, (env->server_count + 1)*sizeof(*env->servers) );
-                if( new_servers == NULL ) return NM_ERROR( DSSL_E_OUT_OF_MEMORY );
-		memcpy( &ret_si->server_ip,  &ip_address, sizeof(ret_si->server_ip) ) ;
-                ret_si->port = port;
-                ret_si->pkey = env->pkey;
-
-                new_servers[env->server_count] = ret_si;
-                env->servers = new_servers;
-                env->server_count++;
-                DEBUG_TRACE1("Server count : %d\n", env->server_count);
-                return ret_si;
+                if( INADDR_IP( si->server_ip ) == INADDR_IP( ip_address ) &&
+                        port == si->port ) return si;
         }
 
         return NULL;

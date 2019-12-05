@@ -86,7 +86,7 @@ int DSSL_EnvSetPortInfo( DSSL_Env* env, uint16_t port[], int port_count);
 key server list. Return 1 if found, 0 otherwise */
 int DSSL_MoveServerToMissingKeyList( DSSL_Env* env, DSSL_ServerInfo* si );
 			
-DSSL_ServerInfo* DSSL_EnvFindServerInfo( DSSL_Env* env, struct in_addr server_ip, uint16_t port );
+DSSL_ServerInfo* DSSL_EnvFindServerInfo( const DSSL_Env* env, struct in_addr server_ip, uint16_t port );
 
 /* Session mgmt */
 DSSL_Session* DSSL_EnvCreateSession( DSSL_Env* env, struct in_addr dst_ip, uint16_t dst_port,
