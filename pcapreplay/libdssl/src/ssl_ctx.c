@@ -93,7 +93,7 @@ DSSL_ServerInfo* DSSL_EnvAddServer_v2( DSSL_Env* env, struct in_addr ip_address,
         DSSL_ServerInfo* ret_si = NULL;
         ret_si = (DSSL_ServerInfo*) calloc( 1, sizeof( DSSL_ServerInfo ) );
         /* 
-           In server not found, and if received port present in ssl port list.
+           If received port present in ssl port list.
            Create new server and add to existing list for future.
            Return newly created server.
         */
@@ -133,10 +133,6 @@ DSSL_ServerInfo* DSSL_EnvAddServer_v2( DSSL_Env* env, struct in_addr ip_address,
 DSSL_Session* DSSL_EnvCreateSession( DSSL_Env* env, struct in_addr dst_ip, uint16_t dst_port,
 									struct in_addr src_ip, uint16_t src_port)
 {
-
-        DEBUG_TRACE2("\nSRI : ==================\n\n%d - %d\n", src_ip, src_port);
-        DEBUG_TRACE2("\n%d - %d\n", dst_ip, dst_port);
-        DEBUG_TRACE0("\nSRI : ==================\n");
 	/* first try destination address as the first packet in a session usually 
 	comes from a client */
 	DSSL_ServerInfo* si = DSSL_EnvFindServerInfo( env, dst_ip, dst_port );

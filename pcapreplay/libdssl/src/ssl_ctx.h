@@ -28,7 +28,6 @@
 extern "C" {
 #endif
 
-#define SSL_PORT_LEN 128
 /* DSSL_ServerInfo - maps server ip:port to SSL certificate, RSA private key file 
 	and key file password */
 
@@ -55,7 +54,6 @@ typedef struct _DSSL_Env
 	EVP_PKEY*		pkey;
 	int						key_count;
 	int						keys_try_index; /* round-robin index of the first key to try */
-        //uint16_t ssl_port[SSL_PORT_LEN];
         uint16_t *ssl_port;
         uint16_t port_count;
 
