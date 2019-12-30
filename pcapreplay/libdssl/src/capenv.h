@@ -112,6 +112,8 @@ CapEnvIsSSLPacket: return 1 if there is an SSL server registered at packet's src
 */
 int CapEnvIsSSLPacket( const CapEnv* env, const DSSL_Pkt* pkt );
 
+int CapEnvSetSSL_Port(CapEnv* env, uint16_t ports[], uint16_t port_count);
+
 /** CapEnvProcessPacket: main (TCP) packet processing routine*/
 void CapEnvProcessPacket( CapEnv* env, DSSL_Pkt* pkt );
 
