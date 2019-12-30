@@ -184,6 +184,12 @@ int CapEnvSetSSL_ServerInfoWithKey( CapEnv* env, const struct in_addr* ip_addres
 	return DSSL_EnvSetServerInfoWithKey( env->ssl_env, ip_address, port, pkey );
 }
 
+int CapEnvSetSSL_Port(CapEnv* env, uint16_t ports[], uint16_t port_count)
+{
+       if( env->ssl_env == NULL ) return NM_ERROR( DSSL_E_UNINITIALIZED_ARGUMENT );
+       return DSSL_EnvSetSSLPortInfo(env->ssl_env, ports, port_count); 
+        
+}
 
 void CapEnvSetSessionCallback( CapEnv* env, CapEnvSessionCallback callback, void* user_data )
 {
@@ -245,6 +251,14 @@ int CapEnvAddSSLKey( CapEnv* env, EVP_PKEY* pkey )
 		return DSSL_AddSSLKey( env->ssl_env, pkey );
 	else
 		return NM_ERROR(DSSL_E_NOT_IMPL);
+}
+
+int CapEnvAddSSL_Env_Key( CapEnv* env, const char* keyfile, const char* password )
+{
+        if( env->ssl_env )
+                return DSSL_Add_Env_SSLKey(env->ssl_env, keyfile, password);
+        else
+                return NM_ERROR(DSSL_E_NOT_IMPL);
 }
 
 int CapEnvGetMaxSessionCount( const CapEnv* env )

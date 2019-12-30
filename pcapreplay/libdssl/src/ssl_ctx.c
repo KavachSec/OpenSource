@@ -87,6 +87,46 @@ static int ServerInfo_LoadPrivateKey( EVP_PKEY **pkey, const char *keyfile, cons
 	return rc;
 }
 
+/* 
+  This function doesn't check if server already exists. 
+  If received port present in ssl port list.
+  Create new server and add to existing list for future and return newly created server.
+*/
+DSSL_ServerInfo* DSSL_EnvAddSSLServer( DSSL_Env* env, struct in_addr ip_address, uint16_t port )
+{
+        int i, is_ssl_port = 0;
+        DSSL_ServerInfo* server = NULL;
+
+        DEBUG_TRACE1("ssl Port count : %d\n", env->ssl_port_count);
+        for( i = 0; i < env->ssl_port_count; i++)
+        {
+                DEBUG_TRACE2("SSL PORTS : %d Received Port : %d\n", env->ssl_port[i], port);
+                if( env->ssl_port[i] == port ) {
+                       is_ssl_port = 1;
+                       break;
+                }
+        }
+
+        if( is_ssl_port )
+        {
+                server = (DSSL_ServerInfo*) calloc( 1, sizeof( DSSL_ServerInfo ) );
+                DEBUG_TRACE0("Adding new server \n");
+                DSSL_ServerInfo** new_servers = NULL;
+                new_servers = realloc( env->servers, (env->server_count + 1)*sizeof(*env->servers) );
+                if( new_servers == NULL ) return NM_ERROR( DSSL_E_OUT_OF_MEMORY );
+
+                memcpy( &server->server_ip,  &ip_address, sizeof(server->server_ip) ) ;
+                server->port = port;
+                server->pkey = env->pkey;
+
+                new_servers[env->server_count] = server;
+                env->servers = new_servers;
+                env->server_count++;
+                DEBUG_TRACE1("Server count : %d\n", env->server_count);
+                return server;
+        }
+        return NULL;
+}
 
 DSSL_Session* DSSL_EnvCreateSession( DSSL_Env* env, struct in_addr dst_ip, uint16_t dst_port,
 									struct in_addr src_ip, uint16_t src_port)
@@ -98,8 +138,14 @@ DSSL_Session* DSSL_EnvCreateSession( DSSL_Env* env, struct in_addr dst_ip, uint1
 	
 	/* no SSL server found at dst ip:port, try source ip:port before leaving si to be NULL,
 	which triggers SSL key auto-discover */
-	if(!si) si = DSSL_EnvFindServerInfo( env, src_ip, src_port );
-	
+	if(!si) {
+               si = DSSL_EnvFindServerInfo( env, src_ip, src_port );
+	}
+
+	if(!si) {
+               si = DSSL_EnvAddSSLServer( env, dst_ip, dst_port );
+	}
+
 	sess = malloc( sizeof( DSSL_Session) );
 	DSSL_SessionInit( env, sess, si );
 
@@ -201,7 +247,6 @@ int DSSL_EnvAddServer( DSSL_Env* env, DSSL_ServerInfo* server )
 	return DSSL_RC_OK;
 }
 
-
 int DSSL_EnvAddMissingKeyServerInfo( DSSL_Env* env, DSSL_ServerInfo* server )
 {
 	DSSL_ServerInfo** new_servers = NULL;
@@ -290,20 +335,29 @@ int DSSL_EnvSetServerInfo( DSSL_Env* env, const struct in_addr* ip_address, uint
 	return rc;
 }
 
+int DSSL_EnvSetSSLPortInfo( DSSL_Env* env, uint16_t port[], int port_count)
+{
+        DEBUG_TRACE1("Port count DSSL : %d\n", port_count);
+        int rc = DSSL_RC_OK;
+        env->ssl_port = port; 
+        env->ssl_port_count = port_count;
+        DEBUG_TRACE1("Port count ENV : %d\n", env->ssl_port_count);
+        return rc;
+}
 
 /* find DSSL_ServerInfo in a table by ip:port */
 DSSL_ServerInfo* DSSL_EnvFindServerInfo( const DSSL_Env* env, struct in_addr ip_address, uint16_t port )
 {
-	int i;
-	for( i = 0; i < env->server_count; i++ )
-	{
-		DSSL_ServerInfo* si = env->servers[i];
+        int i;
+        for( i = 0; i < env->server_count; i++ )
+        {
+                DSSL_ServerInfo* si = env->servers[i];
 
-		if( INADDR_IP( si->server_ip ) == INADDR_IP( ip_address ) &&
-			port == si->port ) return si;
-	}
+                if( INADDR_IP( si->server_ip ) == INADDR_IP( ip_address ) &&
+                        port == si->port ) return si;
+        }
 
-	return NULL;
+        return NULL;
 }
 
 /* shallow key check by pointer comparision only */
@@ -336,6 +390,27 @@ int DSSL_AddSSLKey(DSSL_Env* env, EVP_PKEY* pkey)
 	++env->key_count;
 
 	return DSSL_RC_OK;
+}
+
+int DSSL_Add_Env_SSLKey(DSSL_Env* env, const char *keyfile, const char *password)
+{
+        int rc = DSSL_RC_OK;
+        EVP_PKEY *pkey = NULL;
+        
+        if ( !keyfile )
+                return NM_ERROR( DSSL_E_INVALID_PARAMETER );
+        
+        if ( !password ) 
+                password = "";
+        
+        rc = ServerInfo_LoadPrivateKey( &pkey, keyfile, password );
+        if( rc != DSSL_RC_OK )
+        {       
+                return rc;
+        }
+       
+        env->pkey = pkey; 
+        return rc;
 }
 
 int DSSL_MoveServerToMissingKeyList( DSSL_Env* env, DSSL_ServerInfo* si )
