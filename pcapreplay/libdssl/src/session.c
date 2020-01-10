@@ -399,9 +399,23 @@ static int DetectSessionTypeCallback(struct _TcpStream* stream, DSSL_Pkt* pkt )
 	DEBUG_TRACE1( "\nTCP Session Type detected: %s", is_ssl ? "SSL" : "PlainText" ); 
 #endif
 
-	/* set the actual session type based on whether
-		the first packet was recognized as SSL ClientHello */
-	sess->type = is_ssl ? eSessionTypeSSL : eSessionTypeTcp;
+	if (dir == ePacketDirFromClient) {
+		/*
+		 * In egress direction, we will always process traffic as TCP.
+		 *
+		 * In mesh7 datapath, egress SSL traffic is handled by sslproxy.
+		 * If egress SSL traffic is received by libdssl, it is because the port
+		 * is configured for egress tcp capture. So interpret the traffic as TCP.
+		 */
+		sess->type = eSessionTypeTcp;
+	} else {
+		/*
+		 * Set the actual session type based on whether
+		 * the first packet was recognized as SSL ClientHello.
+		 */
+		sess->type = is_ssl ? eSessionTypeSSL : eSessionTypeTcp;
+	}
+
 	/* initialize session type specific data */
 	SessionInitDecoders( sess, pkt);
 	/* run this packet again throught the actual data callback */
