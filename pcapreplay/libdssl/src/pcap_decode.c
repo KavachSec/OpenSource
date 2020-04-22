@@ -113,8 +113,9 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
 		memset( &tcp_header, 0, sizeof(tcp_header));
 
                 ip_header = (struct ip*) (pkt_data + SLL_HDR_LEN);
-		tcp_header = (struct tcphdr*) (pkt_data + SLL_HDR_LEN + ip_hdrlen);
                 ip_hdrlen = IP_HL(ip_header) << 2;
+                printf("Ip header len : %d\n", ip_hdrlen);
+		tcp_header = (struct tcphdr*) (pkt_data + SLL_HDR_LEN + ip_hdrlen);
 
                 /*
                 printf("Ip header length : %d\n", ip_hdrlen);
@@ -140,12 +141,14 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
                        if( (tcp_header->th_flags & TH_SYN) ){
                               if( (tcp_header->th_flags & TH_ACK) ){
                                      printf("SYN ACK Packet Dropping\n");
+                                     return;
                               } else {
                                      //if(env->syn_work_flow_callback( srcip, dstip)){
                                      if(env->syn_work_flow_callback( ip_header->ip_src, ip_header->ip_dst )){
                                             DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN, len - SLL_HDR_LEN );
                                      } else {
                                             printf("Dropping SYN Packet\n");
+                                            return;
                                      }
                               }
                        } else {
