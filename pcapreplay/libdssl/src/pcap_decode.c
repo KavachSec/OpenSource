@@ -105,48 +105,56 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
         if(( ntohs(sll_header->sll_protocol) == ETHERTYPE_IP ) ||
 			( ntohs(sll_header->sll_protocol) == ETHERTYPE_IPV6 ))
         {
-
+                int ip_hdrlen = 0;
+                struct ip* ip_header;
 		struct tcphdr* tcp_header;
+
+		memset( &ip_header, 0, sizeof(ip_header));
 		memset( &tcp_header, 0, sizeof(tcp_header));
-		tcp_header = (struct tcphdr*) (pkt_data + SLL_HDR_LEN + 20);
+
+                ip_header = (struct ip*) (pkt_data + SLL_HDR_LEN);
+		tcp_header = (struct tcphdr*) (pkt_data + SLL_HDR_LEN + ip_hdrlen);
+                ip_hdrlen = IP_HL(ip_header) << 2;
+
+                /*
+                printf("Ip header length : %d\n", ip_hdrlen);
+                printf("SRC IP  : %d\n",ip_header->ip_src);
+                printf("DST IP  : %d\n",ip_header->ip_dst);
 
                 struct in_addr addr;
                 char *srcip = "", *dstip = "";
-		char *data;
                 dstip = (char *) malloc (128);
 		srcip = (char *) malloc (128);
 
 		inet_ntop(AF_INET, pkt_data + SLL_HDR_LEN + 12, srcip, 128);
 		inet_ntop(AF_INET, pkt_data + SLL_HDR_LEN + 16, dstip, 128);
 
-                //printf("%s is instance ip %d\n", srcip, env->is_instance_ip(addr));
-                //DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN, len - SLL_HDR_LEN );
+                inet_aton(srcip, &addr);
+                printf("SRC ADDRD : %d\n", addr);
+                inet_aton(dstip, &addr);
+                printf("DST ADDRD : %d\n", addr);
 
+                */
 
                 if(env->syn_work_flow_callback) { 
                        if( (tcp_header->th_flags & TH_SYN) ){
                               if( (tcp_header->th_flags & TH_ACK) ){
                                      printf("SYN ACK Packet Dropping\n");
                               } else {
-                                     printf("SYN Packet-->\n");
-                                     if(env->syn_work_flow_callback( srcip, dstip)){
-                                            printf("Accept from SYN work flow\n");
+                                     //if(env->syn_work_flow_callback( srcip, dstip)){
+                                     if(env->syn_work_flow_callback( ip_header->ip_src, ip_header->ip_dst )){
                                             DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN, len - SLL_HDR_LEN );
                                      } else {
                                             printf("Dropping SYN Packet\n");
                                      }
                               }
                        } else {
-
                               DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN, len - SLL_HDR_LEN );
                        } 
                 } else {
-                       printf("Callback not set\n");
                        DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN, len - SLL_HDR_LEN );
                 }
-
         }
-
 }
 #endif
 

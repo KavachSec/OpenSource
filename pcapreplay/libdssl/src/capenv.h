@@ -45,9 +45,8 @@ typedef void (*CapEnvSessionCallback)( struct CapEnv_* env, TcpSession* sess, ch
 */
 typedef void (*CapEnvDatagramCallback)( struct CapEnv_* env, const u_char* data, uint32_t len, DSSL_Pkt* pkt );
 
-//typedef int (*IsInstanceIPCallback)( struct in_addr addr);
-
-typedef int (*SynWorkFlow) (char* srcip, char* dstip);
+//typedef int (*SynWorkFlow) (char* srcip, char* dstip);
+typedef int (*SynWorkFlow) (struct in_addr srcip, struct in_addr dstip);
 
 /* Packet capture environment */
 struct CapEnv_
@@ -74,10 +73,6 @@ struct CapEnv_
 #ifdef NM_TRACE_FRAME_COUNT
 	uint32_t				frame_cnt; /* frame count; for debugging */
 #endif
-
-        void* env_info;
-
-        //IsInstanceIPCallback is_instance_ip;
 
         SynWorkFlow syn_work_flow_callback;
 
