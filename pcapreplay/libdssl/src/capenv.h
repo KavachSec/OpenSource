@@ -45,7 +45,6 @@ typedef void (*CapEnvSessionCallback)( struct CapEnv_* env, TcpSession* sess, ch
 */
 typedef void (*CapEnvDatagramCallback)( struct CapEnv_* env, const u_char* data, uint32_t len, DSSL_Pkt* pkt );
 
-//typedef int (*SynWorkFlow) (char* srcip, char* dstip);
 typedef int (*SynWorkFlow) (struct in_addr srcip, struct in_addr dstip);
 
 /* Packet capture environment */

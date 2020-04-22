@@ -107,35 +107,14 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
         {
                 int ip_hdrlen = 0;
                 struct ip* ip_header;
-		struct tcphdr* tcp_header;
+                struct tcphdr* tcp_header;
 
-		memset( &ip_header, 0, sizeof(ip_header));
-		memset( &tcp_header, 0, sizeof(tcp_header));
+                memset( &ip_header, 0, sizeof(ip_header));
+                memset( &tcp_header, 0, sizeof(tcp_header));
 
                 ip_header = (struct ip*) (pkt_data + SLL_HDR_LEN);
                 ip_hdrlen = IP_HL(ip_header) << 2;
-                printf("Ip header len : %d\n", ip_hdrlen);
-		tcp_header = (struct tcphdr*) (pkt_data + SLL_HDR_LEN + ip_hdrlen);
-
-                /*
-                printf("Ip header length : %d\n", ip_hdrlen);
-                printf("SRC IP  : %d\n",ip_header->ip_src);
-                printf("DST IP  : %d\n",ip_header->ip_dst);
-
-                struct in_addr addr;
-                char *srcip = "", *dstip = "";
-                dstip = (char *) malloc (128);
-		srcip = (char *) malloc (128);
-
-		inet_ntop(AF_INET, pkt_data + SLL_HDR_LEN + 12, srcip, 128);
-		inet_ntop(AF_INET, pkt_data + SLL_HDR_LEN + 16, dstip, 128);
-
-                inet_aton(srcip, &addr);
-                printf("SRC ADDRD : %d\n", addr);
-                inet_aton(dstip, &addr);
-                printf("DST ADDRD : %d\n", addr);
-
-                */
+                tcp_header = (struct tcphdr*) (pkt_data + SLL_HDR_LEN + ip_hdrlen);
 
                 if(env->syn_work_flow_callback) { 
                        if( (tcp_header->th_flags & TH_SYN) ){
@@ -143,7 +122,6 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
                                      printf("SYN ACK Packet Dropping\n");
                                      return;
                               } else {
-                                     //if(env->syn_work_flow_callback( srcip, dstip)){
                                      if(env->syn_work_flow_callback( ip_header->ip_src, ip_header->ip_dst )){
                                             DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN, len - SLL_HDR_LEN );
                                      } else {
