@@ -119,13 +119,13 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
                 if(env->syn_work_flow_callback) { 
                        if( (tcp_header->th_flags & TH_SYN) ){
                               if( (tcp_header->th_flags & TH_ACK) ){
-                                     printf("SYN ACK Packet Dropping\n");
+                                     //printf("SYN ACK Packet Dropping\n");
                                      return;
                               } else {
                                      if(env->syn_work_flow_callback( ip_header->ip_src, ip_header->ip_dst )){
                                             DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN, len - SLL_HDR_LEN );
                                      } else {
-                                            printf("Dropping SYN Packet\n");
+                                            //printf("Dropping SYN Packet\n");
                                             return;
                                      }
                               }
