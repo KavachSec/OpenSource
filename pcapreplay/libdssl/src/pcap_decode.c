@@ -83,6 +83,7 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
         CapEnv* env = (CapEnv*)ptr;
         DSSL_Pkt packet;
         int len = header->caplen;
+        int skip_byte = 0;
         struct datalink_sll_header *sll_header = (struct datalink_sll_header *)pkt_data;
 
 #ifdef NM_TRACE_FRAME_COUNT
@@ -123,9 +124,43 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
                             return;
                         }
                     }
-                }
-            
-                DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN, len - SLL_HDR_LEN );
+                } else if ( env->mirroring_callback ) {
+                    skip_byte = 50;
+                    struct in_addr dst_addr;
+                    char *inner_dstip = "";
+                    char *indstip;
+                    inner_dstip = (char *) malloc (128);
+		    indstip = inet_ntop(AF_INET, pkt_data + SLL_HDR_LEN + 66, inner_dstip, 128);
+		    inet_aton(indstip, &dst_addr);
+
+		    struct tcphdr* tcp_header = NULL;
+		    tcp_header = (struct tcphdr*) pkt_data + SLL_HDR_LEN + 50;
+
+                    if( env->mirroring_callback(dst_addr) ) {
+                      DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN + skip_byte, len - SLL_HDR_LEN );        
+                    } else {
+			if(tcp_header->th_flags & TH_SYN ){
+				printf("SYN Packet\n");
+				char *srcip = "", *inner_srcip = "";
+                		char *data, *insrc;
+                		srcip = (char *) malloc (128);
+                		inner_srcip = (char *) malloc (128);
+				data = inet_ntop(AF_INET, pkt_data + SLL_HDR_LEN + 12, srcip, 128);
+                		printf("Source IP : %s -- Inner Dst Ip : %s\n", srcip, inner_dstip); 
+
+				if(strcmp(srcip, inner_dstip) != 0) {
+					printf("DROPPING -- src ip and inner dst ip  are not same.\n");
+				} else {
+					printf("PROCESSING -- src ip and inner dst ip  are same.\n");
+                			DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN + 50, len - SLL_HDR_LEN - 50 );
+				}
+			} else {
+				printf("Not a SYN packet continue processing\n");
+                		DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN + 50, len - SLL_HDR_LEN - 50 );
+                	}
+                    }
+                } else 
+                  DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN , len - SLL_HDR_LEN );
         }
 }
 #endif
