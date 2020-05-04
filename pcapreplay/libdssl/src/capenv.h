@@ -47,6 +47,8 @@ typedef void (*CapEnvDatagramCallback)( struct CapEnv_* env, const u_char* data,
 
 typedef int (*SynWorkFlow) (struct in_addr srcip, struct in_addr dstip);
 
+typedef int (*SynAckWorkFlow) (struct in_addr srcip, struct in_addr dstip);
+
 /* Packet capture environment */
 struct CapEnv_
 {
@@ -75,6 +77,7 @@ struct CapEnv_
 
         SynWorkFlow syn_work_flow_callback;
 
+        SynAckWorkFlow syn_ack_work_flow_callback;
 };
 
 

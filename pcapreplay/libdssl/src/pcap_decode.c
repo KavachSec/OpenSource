@@ -105,7 +105,7 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
         if(( ntohs(sll_header->sll_protocol) == ETHERTYPE_IP ) ||
 			( ntohs(sll_header->sll_protocol) == ETHERTYPE_IPV6 ))
         {
-                if(env->syn_work_flow_callback) {
+                if(env->syn_work_flow_callback && env->syn_ack_work_flow_callback) {
                     int ip_hdrlen = 0;
                     struct ip* ip_header = NULL;
                     struct tcphdr* tcp_header = NULL;
@@ -116,8 +116,10 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
             
                     if( (tcp_header->th_flags & TH_SYN) ){
                         if( (tcp_header->th_flags & TH_ACK) ){
+                            if( ! env->syn_ack_work_flow_callback( ip_header->ip_src, ip_header->ip_dst )){
+                                return;
+                            }
                             //printf("SYN ACK Packet Dropping\n");
-                            return;
                         } else if( ! env->syn_work_flow_callback( ip_header->ip_src, ip_header->ip_dst )){
                             //printf("Dropping SYN Packet\n");
                             return;
