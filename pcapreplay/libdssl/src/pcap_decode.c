@@ -102,12 +102,15 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
                 return;
         }
 
-        printk( "packet.ether_header->h_src 0x%pM\n", packet.ether_header->ether_shost);
-        printk( "packet.ether_header->h_dest 0x%pM\n", packet.ether_header->ether_dhost);
+
+	//printf("Source MAC: %s\n", ether_ntoa(&packet.ether_header->ether_shost));
+	//printf("Dest MAC: %s\n", ether_ntoa(&packet.ether_header->ether_dhost));
 
         if(( ntohs(sll_header->sll_protocol) == ETHERTYPE_IP ) ||
 			( ntohs(sll_header->sll_protocol) == ETHERTYPE_IPV6 ))
         {
+	        printf("SRC %s\n", ether_ntoa((const struct ether_addr *)&packet.ether_header->ether_shost)); // prints source
+		printf("DEST %s\n", ether_ntoa((const struct ether_addr *)&packet.ether_header->ether_dhost)); // prints destination
                 if(env->syn_work_flow_callback) {
                     int ip_hdrlen = 0;
                     struct ip* ip_header = NULL;
