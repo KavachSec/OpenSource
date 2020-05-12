@@ -22,6 +22,8 @@
 #include "stdinc.h"
 #include "decode.h"
 
+static FILE *fp = NULL; 
+
 void pcap_cb_ethernet( u_char *ptr, const struct pcap_pkthdr *header, const u_char *pkt_data );
 void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *pkt_data );
 void pcap_cb_null( u_char *ptr, const struct pcap_pkthdr *header, const u_char *pkt_data );
@@ -85,6 +87,8 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
         int len = header->caplen;
         struct datalink_sll_header *sll_header = (struct datalink_sll_header *)pkt_data;
 
+        fp = fopen("mac_add.txt", "a");
+
 #ifdef NM_TRACE_FRAME_COUNT
         DEBUG_TRACE1("\n-=LINUX-SLL-FRAME: %u", env->frame_cnt);
         ++env->frame_cnt;
@@ -111,6 +115,13 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
         {
 	        printf("SRC %s\n", ether_ntoa((const struct ether_addr *)&packet.ether_header->ether_shost)); // prints source
 		printf("DEST %s\n", ether_ntoa((const struct ether_addr *)&packet.ether_header->ether_dhost)); // prints destination
+                printf("SLL ip : %s\n", ether_ntoa(sll_header->sll_addr));
+
+	        fprintf( fp, "SRC %s\n", ether_ntoa((const struct ether_addr *)&packet.ether_header->ether_shost)); // prints source
+		fprintf(fp, "DEST %s\n", ether_ntoa((const struct ether_addr *)&packet.ether_header->ether_dhost)); // prints destination
+                fprintf(fp, "SLL ip : %s\n", ether_ntoa(sll_header->sll_addr));
+
+                fclose(fp);
                 if(env->syn_work_flow_callback) {
                     int ip_hdrlen = 0;
                     struct ip* ip_header = NULL;
