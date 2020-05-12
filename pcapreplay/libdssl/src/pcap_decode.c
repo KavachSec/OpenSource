@@ -148,12 +148,20 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
 				data = inet_ntop(AF_INET, pkt_data + SLL_HDR_LEN + 12, srcip, 128);
                 		printf("Source IP : %s -- Inner Dst Ip : %s\n", srcip, inner_dstip); 
 
+                               /*
 				if(strcmp(srcip, inner_dstip) != 0) {
 					printf("DROPPING -- src ip and inner dst ip  are not same.\n");
 				} else {
 					printf("PROCESSING -- src ip and inner dst ip  are same.\n");
                 			DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN + 50, len - SLL_HDR_LEN - 50 );
 				}
+                               */
+                                if(strcmp(srcip, inner_dstip) == 0) {
+                                        printf("DROPPING -- src ip and inner dst ip  are same.\n");
+                                } else {
+                                        printf("PROCESSING -- src ip and inner dst ip  are not same.\n");
+                                        DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN + 50, len - SLL_HDR_LEN - 50 );
+                                }
 			} else {
 				printf("Not a SYN packet continue processing\n");
                 		DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN + 50, len - SLL_HDR_LEN - 50 );
