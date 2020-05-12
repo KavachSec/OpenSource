@@ -102,6 +102,9 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
                 return;
         }
 
+        printk( "packet.ether_header->h_src 0x%pM\n", packet.ether_header->ether_shost);
+        printk( "packet.ether_header->h_dest 0x%pM\n", packet.ether_header->ether_dhost);
+
         if(( ntohs(sll_header->sll_protocol) == ETHERTYPE_IP ) ||
 			( ntohs(sll_header->sll_protocol) == ETHERTYPE_IPV6 ))
         {
