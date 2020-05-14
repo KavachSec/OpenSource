@@ -137,6 +137,7 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
 		    tcp_header = (struct tcphdr*) pkt_data + SLL_HDR_LEN + 50;
 
                     if( env->mirroring_callback(dst_addr) ) {
+                      printf("ip %s . Not a internal ip.", indstip);
                       DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN + skip_byte, len - SLL_HDR_LEN );        
                     } else {
 			if(tcp_header->th_flags & TH_SYN ){
