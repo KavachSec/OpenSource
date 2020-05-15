@@ -131,6 +131,7 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
                     struct ip* ip_header = NULL;
                     ip_header = (struct ip*) (pkt_data + SLL_HDR_LEN + skip_byte);
 
+                   /*
                     printf("OUTER IP.\n");
                     printf("Src ip : %s (%d)\n", inet_ntoa(outer_ip_header->ip_src), outer_ip_header->ip_src );
                     printf("Dst ip : %s (%d)\n", inet_ntoa(outer_ip_header->ip_dst), outer_ip_header->ip_dst );
@@ -138,25 +139,25 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
                     printf("INNER IP.\n");
                     printf("Src ip : %s (%d)\n", inet_ntoa(ip_header->ip_src), ip_header->ip_src );
                     printf("Dst ip : %s (%d)\n", inet_ntoa(ip_header->ip_dst), ip_header->ip_dst );
-
+                   */ 
 		    struct tcphdr* tcp_header = NULL;
 		    tcp_header = (struct tcphdr*) pkt_data + SLL_HDR_LEN + skip_byte;
 
                     if( env->mirroring_callback(ip_header->ip_dst) ) {
-                      printf("ip %s . Not a internal ip.", inet_ntoa(ip_header->ip_dst));
+                      //printf("ip %s . Not a internal ip.", inet_ntoa(ip_header->ip_dst));
                       DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN + skip_byte, len - SLL_HDR_LEN - skip_byte);        
                     } else {
 			if(tcp_header->th_flags & TH_SYN ){
-				printf("SYN Packet\n");
+				//printf("SYN Packet\n");
                                 if( outer_ip_header->ip_src.s_addr == ip_header->ip_dst.s_addr ) {
-                                        printf("DROPPING -- src ip and inner dst ip  are same.\n");
+                                        //printf("DROPPING -- src ip and inner dst ip  are same.\n");
                                         return;
                                 } else {
-                                        printf("PROCESSING -- src ip and inner dst ip  are not same.\n");
+                                        //printf("PROCESSING -- src ip and inner dst ip  are not same.\n");
                                         DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN + skip_byte, len - SLL_HDR_LEN - skip_byte );
                                 }
 			} else {
-				printf("Not a SYN packet continue processing\n");
+				//printf("Not a SYN packet continue processing\n");
                 		DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN + skip_byte, len - SLL_HDR_LEN - skip_byte );
                 	}
                     }
