@@ -126,6 +126,18 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
                     }
                 } else if ( env->mirroring_callback ) {
                     skip_byte = 50;
+                    struct ip* outer_ip_header = NULL;
+                    outer_ip_header = (struct ip*) (pkt_data + SLL_HDR_LEN );
+                    struct ip* ip_header = NULL;
+                    ip_header = (struct ip*) (pkt_data + SLL_HDR_LEN + skip_byte);
+
+
+                    printf("OUTER IP.\n");
+                    printf("Src ip : %s (%d)  Dst ip : %s (%d)\n", inet_ntoa(outer_ip_header->ip_src), outer_ip_header->ip_src, outer_inet_ntoa(ip_header->ip_dst), outer_ip_header->ip_dst );
+
+                    printf("INNER IP.\n");
+                    printf("Src ip : %s (%d)  Dst ip : %s (%d)\n", inet_ntoa(ip_header->ip_src), ip_header->ip_src, inet_ntoa(ip_header->ip_dst), ip_header->ip_dst );
+
                     struct in_addr dst_addr;
                     char *inner_dstip = "";
                     char *indstip;
@@ -134,7 +146,7 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
 		    inet_aton(indstip, &dst_addr);
 
 		    struct tcphdr* tcp_header = NULL;
-		    tcp_header = (struct tcphdr*) pkt_data + SLL_HDR_LEN + 50;
+		    tcp_header = (struct tcphdr*) pkt_data + SLL_HDR_LEN + skip_byte;
 
                     if( env->mirroring_callback(dst_addr) ) {
                       printf("ip %s . Not a internal ip.", indstip);
