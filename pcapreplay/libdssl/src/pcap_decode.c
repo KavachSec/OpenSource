@@ -139,15 +139,6 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
                     printf("Src ip : %s (%d)\n", inet_ntoa(ip_header->ip_src), ip_header->ip_src );
                     printf("Dst ip : %s (%d)\n", inet_ntoa(ip_header->ip_dst), ip_header->ip_dst );
 
-                   /*
-                    struct in_addr dst_addr;
-                    char *inner_dstip = "";
-                    char *indstip;
-                    inner_dstip = (char *) malloc (128);
-		    indstip = inet_ntop(AF_INET, pkt_data + SLL_HDR_LEN + 66, inner_dstip, 128);
-		    inet_aton(indstip, &dst_addr);
-                   */
-
 		    struct tcphdr* tcp_header = NULL;
 		    tcp_header = (struct tcphdr*) pkt_data + SLL_HDR_LEN + skip_byte;
 
@@ -157,21 +148,7 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
                     } else {
 			if(tcp_header->th_flags & TH_SYN ){
 				printf("SYN Packet\n");
-               			char *srcip = "", *inner_srcip = "";
-                		char *data, *insrc;
-                		srcip = (char *) malloc (128);
-                		inner_srcip = (char *) malloc (128);
-				data = inet_ntop(AF_INET, pkt_data + SLL_HDR_LEN + 12, srcip, 128);
-                		printf("Source IP : %s -- Inner Dst Ip : %s\n", srcip, inner_dstip); 
-                               /*
-				if(strcmp(srcip, inner_dstip) != 0) {
-					printf("DROPPING -- src ip and inner dst ip  are not same.\n");
-				} else {
-					printf("PROCESSING -- src ip and inner dst ip  are same.\n");
-                			DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN + 50, len - SLL_HDR_LEN - 50 );
-				}
-                               */
-                                if( outer_ip_header->ip_src == ip_header->ip_dst ) {
+                                if( outer_ip_header->ip_src.s_addr == ip_header->ip_dst.s_addr ) {
                                         printf("DROPPING -- src ip and inner dst ip  are same.\n");
                                         return;
                                 } else {
