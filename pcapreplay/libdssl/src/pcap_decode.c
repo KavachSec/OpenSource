@@ -133,7 +133,7 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
 
 
                     printf("OUTER IP.\n");
-                    printf("Src ip : %s (%d)  Dst ip : %s (%d)\n", inet_ntoa(outer_ip_header->ip_src), outer_ip_header->ip_src, outer_inet_ntoa(ip_header->ip_dst), outer_ip_header->ip_dst );
+                    printf("Src ip : %s (%d)  Dst ip : %s (%d)\n", inet_ntoa(outer_ip_header->ip_src), outer_ip_header->ip_src, inet_ntoa(outer_ip_header->ip_dst), outer_ip_header->ip_dst );
 
                     printf("INNER IP.\n");
                     printf("Src ip : %s (%d)  Dst ip : %s (%d)\n", inet_ntoa(ip_header->ip_src), ip_header->ip_src, inet_ntoa(ip_header->ip_dst), ip_header->ip_dst );
