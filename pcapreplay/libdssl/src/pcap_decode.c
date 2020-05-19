@@ -148,6 +148,11 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
                       DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN + skip_byte, len - SLL_HDR_LEN - skip_byte);        
                     } else {
 			if(tcp_header->th_flags & TH_SYN ){
+                                if( (tcp_header->th_flags & TH_ACK) ){
+                                    //printf("SYN ACK Packet Dropping\n");
+                                    return;
+                                }
+
 				//printf("SYN Packet\n");
                                 if( outer_ip_header->ip_src.s_addr == ip_header->ip_dst.s_addr ) {
                                         //printf("DROPPING -- src ip and inner dst ip  are same.\n");
