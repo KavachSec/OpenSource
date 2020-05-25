@@ -124,6 +124,7 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
                             return;
                         }
                     }
+                    DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN , len - SLL_HDR_LEN );
                 } else if ( env->mirroring_callback ) {
                     skip_byte = 50;
                     struct ip* outer_ip_header = NULL;
