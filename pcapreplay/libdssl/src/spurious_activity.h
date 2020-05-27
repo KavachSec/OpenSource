@@ -1,5 +1,5 @@
-#ifndef __ATTACK__
-#define __ATTACK__
+#ifndef __SPURIOUS_ACTIVITY__
+#define __SPURIOUS_ACTIVITY__
 
 #include <netinet/in.h>
 
@@ -51,4 +51,4 @@ void AnalyzeSpActivity(TcpSession* sess, void *data, int data_type);
 }
 #endif
 
-#endif //__ATTACK__
+#endif //__SPURIOUS_ACTIVITY__
