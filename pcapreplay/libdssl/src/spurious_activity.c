@@ -54,7 +54,6 @@ static int _AddTcpHalfOpenEntry(TcpHalfOpen* tcp_half_open) {
         return SA_ERROR;
     }
 
-
     found = g_hash_table_lookup_extended(g_tcp_half_open_ht,
                                          tcp_half_open->key_hash,
                                          (gpointer *) &key,
@@ -176,16 +175,15 @@ static void EnqueueTcpHalfOpenEntry(TcpSession* sess, int action) {
 }
 
 void AddTcpHalfOpenEntry(TcpHalfOpen* tcp_half_open) {
-   pthread_mutex_lock(&g_tcp_half_open_ht_lock);
-   _AddTcpHalfOpenEntry(tcp_half_open); 
-   pthread_mutex_unlock(&g_tcp_half_open_ht_lock);
+    pthread_mutex_lock(&g_tcp_half_open_ht_lock);
+    _AddTcpHalfOpenEntry(tcp_half_open); 
+    pthread_mutex_unlock(&g_tcp_half_open_ht_lock);
 }
 
 void DeleteTcpHalfOpenEntry(TcpHalfOpen* tcp_half_open) {
-   pthread_mutex_lock(&g_tcp_half_open_ht_lock);
-   _DeleteTcpHalfOpenEntry(tcp_half_open); 
-   pthread_mutex_unlock(&g_tcp_half_open_ht_lock);
-   return;
+    pthread_mutex_lock(&g_tcp_half_open_ht_lock);
+    _DeleteTcpHalfOpenEntry(tcp_half_open); 
+    pthread_mutex_unlock(&g_tcp_half_open_ht_lock);
 }
 
 gboolean ProcessEmbryonicConnection(gpointer key, gpointer value, gpointer data) { 
