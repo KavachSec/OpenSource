@@ -134,7 +134,8 @@ am_libdssl_la_OBJECTS = capture_env.lo ciphersuites.lo decoder.lo \
 	pcap_decode.lo session.lo session_table.lo ssl_ctx.lo \
 	ssl_decode.lo ssl_decode_hs.lo ssl_mac.lo ssl_session.lo \
 	ssl_sessionkey_table.lo ssl_utils.lo stream.lo compression.lo \
-	ssl2_decode.lo ssl2_decode_hs.lo tls_ticket_table.lo
+	ssl2_decode.lo ssl2_decode_hs.lo tls_ticket_table.lo \
+	spurious_activity.lo
 libdssl_la_OBJECTS = $(am_libdssl_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -328,7 +329,7 @@ libdssl_la_SOURCES = capture_env.c ciphersuites.c decoder.c \
         ssl_decode_hs.c ssl_mac.c ssl_session.c \
         ssl_sessionkey_table.c ssl_utils.c stream.c \
         compression.c ssl2_decode.c ssl2_decode_hs.c \
-		tls_ticket_table.c
+	tls_ticket_table.c spurious_activity.c
 
 pkginclude_HEADERS = sslcap.h ptypes.h dssl_defs.h log.h \
         errors.h capenv.h session_table.h session.h \
@@ -337,7 +338,8 @@ pkginclude_HEADERS = sslcap.h ptypes.h dssl_defs.h log.h \
 noinst_HEADERS = stdinc.h ciphersuites.h decoder_stack.h ssl_utils.h \
 	decode.h ssl_mac.h ssl_decode.h ssl_sessionkey_table.h \
 	ssl_decode_hs.h decoder.h fnv_hash.h ptypes.h ssl_session.h \
-	compression.h ssl2_decode.h ssl2_decode_hs.h decode.h tls_ticket_table.h
+	compression.h ssl2_decode.h ssl2_decode_hs.h decode.h tls_ticket_table.h \
+	spurious_activity.h
 
 all: all-am
 
@@ -440,6 +442,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ssl_utils.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stream.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_ticket_table.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spurious_activity.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

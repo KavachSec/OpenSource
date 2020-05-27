@@ -65,6 +65,7 @@ void DumpBuffer(const char *label, const unsigned char *data, int data_len);
 	#define DEBUG_TRACE2( fmt, p1, p2 ) printf( fmt, p1, p2 )
 	#define DEBUG_TRACE3( fmt, p1, p2, p3 ) printf( fmt, p1, p2, p3 )
 	#define DEBUG_TRACE4( fmt, p1, p2, p3, p4 ) printf( fmt, p1, p2, p3, p4 )
+	#define DEBUG_TRACE(  fmt, ...) printf("\n"fmt, ##__VA_ARGS__)
 	#define DEBUG_TRACE_BUF( name, ptr, len ) DumpBuffer( name, ptr, len )
 #else
 	#define DEBUG_TRACE0( fmt )
@@ -72,6 +73,7 @@ void DumpBuffer(const char *label, const unsigned char *data, int data_len);
 	#define DEBUG_TRACE2( fmt, p1, p2 ) 
 	#define DEBUG_TRACE3( fmt, p1, p2, p3 )
 	#define DEBUG_TRACE4( fmt, p1, p2, p3, p4 )
+	#define DEBUG_TRACE(  fmt, ...)
 	#define DEBUG_TRACE_BUF( name, ptr, len )
 #endif
 

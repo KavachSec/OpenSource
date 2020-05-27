@@ -25,6 +25,8 @@
 #include "ssl_session.h"
 #include "ssl_decode_hs.h"
 
+#include "spurious_activity.h"
+
 /* Local prototypes */
 static int OnNewPlainTextPacket( TcpStream* stream, DSSL_Pkt* pkt );
 static int OnNewSSLPacket( TcpStream* stream, DSSL_Pkt* pkt );
@@ -296,6 +298,11 @@ void SessionProcessPacket( CapEnv* env, DSSL_Pkt* pkt )
 	if( stream == NULL ) { _ASSERT( stream ); return; }
 
 	rc = StreamProcessPacket( stream, pkt, &new_packets );
+
+	AnalyzeSpActivity(pkt->session,
+	                  &(pkt->tcp_header->th_flags),
+	                  SA_DATA_TYPE_TCP_FLAGS);
+
 	/* tbd: for now, assume every packet potentially triggers 
 		new packet event for the peer stream */
 	new_packets=1;

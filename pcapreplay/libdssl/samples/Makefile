@@ -288,7 +288,7 @@ top_srcdir = ..
 AUTOMAKE_OPTS = foreign
 EXTRA_DIST = ssltrace.vcproj
 ssltrace_SOURCES = ssltrace.c ssltrace.h utils.c
-ssltrace_LDADD = ../src/libdssl.la -lpcap -lcrypto -lssl -lz 
+ssltrace_LDADD = ../src/libdssl.la -lpcap -lcrypto -lssl -lz -lglib-2.0 -lpthread
 INCLUDES = -I../src
 all: all-am
 
