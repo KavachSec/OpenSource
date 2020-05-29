@@ -35,13 +35,13 @@ typedef struct _TcpHalfOpen {
     int action;
 } TcpHalfOpen;
 
-typedef void (*PROCESS_TCP_HALF_OPEN_CB)(TcpHalfOpen *tcp_half_open);
+typedef void (*PROCESS_TCP_HALF_OPEN_CB)(TcpHalfOpen* tcp_half_open);
 
 typedef struct _MonitorSpActivityConf {
     PROCESS_TCP_HALF_OPEN_CB process_tcp_half_open_cb;
 } MonitorSpActivityConf;
 
-int StartMonitoringSpuriousActivity(MonitorSpActivityConf *MonitorSpActivityConf);
+int StartMonitoringSpuriousActivity(MonitorSpActivityConf* MonitorSpActivityConf);
 int StopMonitoringSpuriousActivity(void);
 
 #ifdef __cplusplus

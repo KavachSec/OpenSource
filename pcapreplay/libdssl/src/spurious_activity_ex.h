@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-void AnalyzeSpActivity(TcpSession* sess, void *data, int data_type);
+void AnalyzeSpActivity(TcpSession* sess, void* data, int data_type);
 
 #ifdef __cplusplus
 }

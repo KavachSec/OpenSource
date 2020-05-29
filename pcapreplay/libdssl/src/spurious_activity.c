@@ -27,7 +27,7 @@ static int g_sp_activity_monitor_initialized = 0;
 static int g_end_is_nigh = 0;
 
 
-static void GetTcpHalfOpenKeyHash(TcpHalfOpen* tcp_half_open, char *key, size_t key_len);
+static void GetTcpHalfOpenKeyHash(TcpHalfOpen* tcp_half_open, char* key, size_t key_len);
 static void InitTcpHalfOpenEntry(TcpSession* sess, int action, TcpHalfOpen* tcp_half_open); 
 static char* TcpHalfOpenEntryToString(TcpHalfOpen* tcp_half_open, char* buff, size_t buff_len);
 
@@ -56,8 +56,8 @@ static int _AddTcpHalfOpenEntry(TcpHalfOpen* tcp_half_open) {
 
     found = g_hash_table_lookup_extended(g_tcp_half_open_ht,
                                          tcp_half_open->key_hash,
-                                         (gpointer *) &key,
-                                         (gpointer *) &tmp_tcp_half_open);
+                                         (gpointer*) &key,
+                                         (gpointer*) &tmp_tcp_half_open);
 
     if ( found == TRUE ) {
         tmp_tcp_half_open->count++;
@@ -101,7 +101,7 @@ static int _DeleteTcpHalfOpenEntry(TcpHalfOpen* tcp_half_open) {
     return SA_OK;
 }
 
-static void GetTcpHalfOpenKeyHash(TcpHalfOpen* tcp_half_open, char *key, size_t key_len) {
+static void GetTcpHalfOpenKeyHash(TcpHalfOpen* tcp_half_open, char* key, size_t key_len) {
     char server[42] = {0,};
     char client[42] = {0,};
 
@@ -189,8 +189,8 @@ void DeleteTcpHalfOpenEntry(TcpHalfOpen* tcp_half_open) {
 gboolean ProcessEmbryonicConnection(gpointer key, gpointer value, gpointer data) { 
     //static uint64_t yield_counter = 0;
     struct timeval* tv = (struct timeval*) data;
-    char *key_str = (char *) key; 
-    TcpHalfOpen *tcp_half_open = (TcpHalfOpen*) value;
+    char* key_str = (char*) key; 
+    TcpHalfOpen* tcp_half_open = (TcpHalfOpen*) value;
     #ifdef NM_ENABLE_TRACE
     char buff[256] = {0,};
     #endif
@@ -226,7 +226,7 @@ gboolean ProcessEmbryonicConnection(gpointer key, gpointer value, gpointer data)
     return FALSE;
 }
 
-static void *ProcessTcpHalfOpenQueueThread(void *data)
+static void* ProcessTcpHalfOpenQueueThread(void* data)
 {
     TcpHalfOpen* tcp_half_open = NULL;
 
@@ -255,7 +255,7 @@ static void *ProcessTcpHalfOpenQueueThread(void *data)
     return NULL;
 }
 
-static void *ProcessTcpHalfOpenEntriesThread(void *data) {
+static void* ProcessTcpHalfOpenEntriesThread(void* data) {
     struct timeval tv;
     struct timespec ts;
     int ret = 0;
@@ -375,7 +375,7 @@ int StopMonitoringSpuriousActivity(void) {
     return SA_OK;
 }
 
-void AnalyzeSpActivity(TcpSession* sess, void *data, int data_type) {
+void AnalyzeSpActivity(TcpSession* sess, void* data, int data_type) {
     int flags = 0;
     int action = SA_ACTION_NONE;
 
