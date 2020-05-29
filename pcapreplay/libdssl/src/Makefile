@@ -329,17 +329,16 @@ libdssl_la_SOURCES = capture_env.c ciphersuites.c decoder.c \
         ssl_decode_hs.c ssl_mac.c ssl_session.c \
         ssl_sessionkey_table.c ssl_utils.c stream.c \
         compression.c ssl2_decode.c ssl2_decode_hs.c \
-	tls_ticket_table.c spurious_activity.c
+        tls_ticket_table.c spurious_activity.c
 
 pkginclude_HEADERS = sslcap.h ptypes.h dssl_defs.h log.h \
         errors.h capenv.h session_table.h session.h \
-        stream.h packet.h ssl_ctx.h netdefs.h
+        stream.h packet.h ssl_ctx.h netdefs.h spurious_activity.h
 
 noinst_HEADERS = stdinc.h ciphersuites.h decoder_stack.h ssl_utils.h \
 	decode.h ssl_mac.h ssl_decode.h ssl_sessionkey_table.h \
 	ssl_decode_hs.h decoder.h fnv_hash.h ptypes.h ssl_session.h \
-	compression.h ssl2_decode.h ssl2_decode_hs.h decode.h tls_ticket_table.h \
-	spurious_activity.h
+	compression.h ssl2_decode.h ssl2_decode_hs.h decode.h tls_ticket_table.h
 
 all: all-am
 
