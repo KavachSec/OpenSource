@@ -25,7 +25,7 @@
 #include "ssl_session.h"
 #include "ssl_decode_hs.h"
 
-#include "spurious_activity.h"
+#include "spurious_activity_ex.h"
 
 /* Local prototypes */
 static int OnNewPlainTextPacket( TcpStream* stream, DSSL_Pkt* pkt );

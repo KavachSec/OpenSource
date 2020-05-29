@@ -18,4 +18,5 @@ pkginclude_HEADERS = sslcap.h ptypes.h dssl_defs.h log.h \
 noinst_HEADERS = stdinc.h ciphersuites.h decoder_stack.h ssl_utils.h \
 	decode.h ssl_mac.h ssl_decode.h ssl_sessionkey_table.h \
 	ssl_decode_hs.h decoder.h fnv_hash.h ptypes.h ssl_session.h \
-	compression.h ssl2_decode.h ssl2_decode_hs.h decode.h tls_ticket_table.h
+	compression.h ssl2_decode.h ssl2_decode_hs.h decode.h tls_ticket_table.h \
+	spurious_activity_ex.h

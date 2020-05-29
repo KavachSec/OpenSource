@@ -1,8 +1,6 @@
 #ifndef __SPURIOUS_ACTIVITY__
 #define __SPURIOUS_ACTIVITY__
 
-#include <netinet/in.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -45,7 +43,6 @@ typedef struct _MonitorSpActivityConf {
 
 int StartMonitoringSpuriousActivity(MonitorSpActivityConf *MonitorSpActivityConf);
 int StopMonitoringSpuriousActivity(void);
-void AnalyzeSpActivity(TcpSession* sess, void *data, int data_type);
 
 #ifdef __cplusplus
 }
