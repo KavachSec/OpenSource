@@ -45,7 +45,7 @@ else
 	OPENSSL_PATH="/usr/local/ssl"
 fi
 
-CFLAGS="$CFLAGS -I$OPENSSL_PATH/include"
+CFLAGS="$CFLAGS -I$OPENSSL_PATH/include -I/usr/include/glib-2.0/"
 LDFLAGS="$LDFLAGS -L$OPENSSL_PATH/lib"
 
 AC_CHECK_HEADERS([arpa/inet.h inttypes.h netinet/in.h stdlib.h string.h sys/time.h])

@@ -134,7 +134,8 @@ am_libdssl_la_OBJECTS = capture_env.lo ciphersuites.lo decoder.lo \
 	pcap_decode.lo session.lo session_table.lo ssl_ctx.lo \
 	ssl_decode.lo ssl_decode_hs.lo ssl_mac.lo ssl_session.lo \
 	ssl_sessionkey_table.lo ssl_utils.lo stream.lo compression.lo \
-	ssl2_decode.lo ssl2_decode_hs.lo tls_ticket_table.lo
+	ssl2_decode.lo ssl2_decode_hs.lo tls_ticket_table.lo \
+	spurious_activity.lo
 libdssl_la_OBJECTS = $(am_libdssl_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
@@ -213,7 +214,7 @@ AUTOMAKE = ${SHELL} /home/amitjain/kavachdatapath/kavachdatapath/pcapmode/libdss
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -g -O2 -DDSSL -D_SYS_MD5_H -I/usr/local/ssl/include -O2 -DNDEBUG
+CFLAGS = -g -O2 -DDSSL -D_SYS_MD5_H -I/usr/local/ssl/include -I/usr/include/glib-2.0/ -O2 -DNDEBUG
 CPP = gcc -E
 CPPFLAGS = 
 CYGPATH_W = echo
@@ -328,16 +329,17 @@ libdssl_la_SOURCES = capture_env.c ciphersuites.c decoder.c \
         ssl_decode_hs.c ssl_mac.c ssl_session.c \
         ssl_sessionkey_table.c ssl_utils.c stream.c \
         compression.c ssl2_decode.c ssl2_decode_hs.c \
-		tls_ticket_table.c
+        tls_ticket_table.c spurious_activity.c
 
 pkginclude_HEADERS = sslcap.h ptypes.h dssl_defs.h log.h \
         errors.h capenv.h session_table.h session.h \
-        stream.h packet.h ssl_ctx.h netdefs.h
+        stream.h packet.h ssl_ctx.h netdefs.h spurious_activity.h
 
 noinst_HEADERS = stdinc.h ciphersuites.h decoder_stack.h ssl_utils.h \
 	decode.h ssl_mac.h ssl_decode.h ssl_sessionkey_table.h \
 	ssl_decode_hs.h decoder.h fnv_hash.h ptypes.h ssl_session.h \
 	compression.h ssl2_decode.h ssl2_decode_hs.h decode.h tls_ticket_table.h
+	spurious_activity_ex.h
 
 all: all-am
 
@@ -440,6 +442,7 @@ include ./$(DEPDIR)/ssl_sessionkey_table.Plo
 include ./$(DEPDIR)/ssl_utils.Plo
 include ./$(DEPDIR)/stream.Plo
 include ./$(DEPDIR)/tls_ticket_table.Plo
+include ./$(DEPDIR)/spurious_activity.Plo
 
 .c.o:
 	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

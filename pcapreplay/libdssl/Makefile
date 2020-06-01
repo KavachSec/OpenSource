@@ -214,7 +214,7 @@ AUTOMAKE = ${SHELL} /home/amitjain/kavachdatapath/kavachdatapath/pcapmode/libdss
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -g -O2 -DDSSL -D_SYS_MD5_H -I/usr/local/ssl/include -O2 -DNDEBUG
+CFLAGS = -g -O2 -DDSSL -D_SYS_MD5_H -I/usr/local/ssl/include -I/usr/include/glib-2.0/ -O2 -DNDEBUG
 CPP = gcc -E
 CPPFLAGS = 
 CYGPATH_W = echo

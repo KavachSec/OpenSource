@@ -35,14 +35,22 @@
         #include <netinet/tcp.h>
 #endif
 #include <sslcap.h>
+#include "spurious_activity.h"
 #include "ssltrace.h"
 
 /* Global variables */
 char ErrBuffer[2048];
 
+void send_spurious_activity(TcpHalfOpen *tcp_half_open) {
+	printf("Sending spurious activitiy: %s, count: %d, stime: %ld",
+	       tcp_half_open->key_hash, tcp_half_open->count, tcp_half_open->stime);
+	free(tcp_half_open);
+}
+
 int main( int argc, char** argv )
 {
 	SSTRACE_ARGS args; int rc = 0;
+	MonitorSpActivityConf monitor_sp_activity_conf;
 
 	memset( &args, 0, sizeof( args ) );
 	ErrBuffer[0] = 0;
@@ -67,6 +75,10 @@ int main( int argc, char** argv )
 		return 1;
 	}
 
+	memset(&monitor_sp_activity_conf, 0, sizeof(monitor_sp_activity_conf));
+	monitor_sp_activity_conf.process_tcp_half_open_cb = send_spurious_activity;
+	StartMonitoringSpuriousActivity(&monitor_sp_activity_conf);
+
 	/* Initialize OpenSSL library before using DSSL! */
 	SSL_library_init();	
 	OpenSSL_add_all_ciphers();
@@ -81,6 +93,7 @@ int main( int argc, char** argv )
 	/* Cleanup OpenSSL */
 	EVP_cleanup();
 	CRYPTO_cleanup_all_ex_data();
+	StopMonitoringSpuriousActivity();
 
 	return rc;
 }
