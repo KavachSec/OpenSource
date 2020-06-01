@@ -235,7 +235,9 @@ static void* ProcessTcpHalfOpenQueueThread(void* data)
     #endif
 
     while ( !g_end_is_nigh ) {
-        tcp_half_open = g_async_queue_timeout_pop(g_tcp_half_open_qu, 1000000);
+        //TBD - Check if pthread_cond_wait and pthread_cond_signal would be
+        //      better approach than sleep+timeout
+        tcp_half_open = g_async_queue_timeout_pop(g_tcp_half_open_qu, 500000);
 
         if ( !tcp_half_open ) { continue; }
 
