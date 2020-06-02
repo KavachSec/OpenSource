@@ -49,6 +49,8 @@ typedef int (*SynWorkFlow) (struct in_addr srcip, struct in_addr dstip);
 
 typedef int (*MirroringCallback) ( struct in_addr dstip);
 
+typedef int (*EnrichMacAddr) (char *mac_addr, struct in_addr ip, struct in_addr *enriched_ip);
+
 /* Packet capture environment */
 struct CapEnv_
 {
@@ -78,6 +80,8 @@ struct CapEnv_
         SynWorkFlow syn_work_flow_callback;
 
         MirroringCallback mirroring_callback;
+
+	EnrichMacAddr enrich_macaddr_callback;
 };
 
 

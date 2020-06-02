@@ -106,6 +106,8 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
         if(( ntohs(sll_header->sll_protocol) == ETHERTYPE_IP ) ||
 			( ntohs(sll_header->sll_protocol) == ETHERTYPE_IPV6 ))
         {
+
+
                 if(env->syn_work_flow_callback) {
                     int ip_hdrlen = 0;
                     struct ip* ip_header = NULL;
@@ -167,9 +169,52 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
                 		DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN + skip_byte, len - SLL_HDR_LEN - skip_byte );
                 	}
                     }
+                } else if(env->enrich_macaddr_callback){
+		/*
+		  char add[] = "192.0.1.10";
+		  char chk_ip[] = "162.241.253.201";
+		  int ip_hdrlen = 0;
+                  struct ip* ip_header = NULL;
+                  struct tcphdr* tcp_header = NULL;
+		  struct in_addr chkip, sa;
+		  inet_pton(AF_INET, add, &(sa.s_addr));
+                  inet_pton(AF_INET, chk_ip, &(chkip.s_addr));
+
+		  printf("Ip to check %s (%d)\n ", chk_ip, chkip.s_addr);
+
+                  ip_header = (struct ip*) (pkt_data + SLL_HDR_LEN);
+                  ip_hdrlen = IP_HL(ip_header) << 2;
+                  tcp_header = (struct tcphdr*) (pkt_data + SLL_HDR_LEN + ip_hdrlen);
+                  printf("Src IP : %s, Dst IP : %s\n", inet_ntoa(ip_header->ip_src), inet_ntoa(ip_header->ip_dst));
+
+		  if(ip_header->ip_dst.s_addr == chkip.s_addr) {
+                    printf("Dest ip is replace with : %s\n", inet_ntoa(sa));
+		    ip_header->ip_dst = sa;
+		  }
+
+		  if(ip_header->ip_src.s_addr == chkip.s_addr) {
+                    printf("Src ip is replace with : %s\n", inet_ntoa(sa));
+		    ip_header->ip_src = sa;
+		  }
+                  */
+		  printf("-------------> Enrich Mac <----------------");
+                  struct ip* ip_header = NULL;
+		  struct in_addr enriched_ip ;
+                  ip_header = (struct ip*) (pkt_data + SLL_HDR_LEN);
+		  if(env->enrich_macaddr_callback(ether_ntoa((const struct ether_addr *)&packet.ether_header->ether_shost), 
+					  ip_header->ip_src, &enriched_ip )){
+		    ip_header->ip_src = enriched_ip;
+	          }
+
+		  if(env->enrich_macaddr_callback(ether_ntoa((const struct ether_addr *)&packet.ether_header->ether_dhost),  
+                                          ip_header->ip_dst, &enriched_ip)){
+		    ip_header->ip_dst = enriched_ip;
+	          }
+
+                  DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN , len - SLL_HDR_LEN );
                 } else {
                   DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN , len - SLL_HDR_LEN );
-                }
+		}
         }
 }
 #endif
