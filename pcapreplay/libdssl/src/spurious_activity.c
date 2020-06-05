@@ -385,6 +385,7 @@ int StopMonitoringSpuriousActivity(void) {
     g_async_queue_push(g_tcp_half_open_qu, tcp_half_open);
 
     pthread_join(g_tcp_half_open_ht_tid, NULL);
+    pthread_join(g_tcp_half_open_qu_tid, NULL);
 
     DeinitSpuriousActivityMonitor();
     return SA_OK;
