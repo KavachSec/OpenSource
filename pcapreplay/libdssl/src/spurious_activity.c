@@ -210,7 +210,7 @@ gboolean ProcessEmbryonicConnection(gpointer key, gpointer value, gpointer data)
 
     if ( ( tv->tv_sec - tcp_half_open->stime ) >=  PTHO_THRESHOLD_TIME ) {
         free(key);
-    
+
         DEBUG_TRACE("SpAM: Detected tcp half open conneciton: %s",
                     TcpHalfOpenEntryToString(tcp_half_open, buff, sizeof(buff)));
 
@@ -251,6 +251,12 @@ static void* ProcessTcpHalfOpenQueueThread(void* data)
 
             case SA_ACTION_ENTRY_DELETE:
                  DeleteTcpHalfOpenEntry(tcp_half_open);
+                 break;
+
+            case SA_ACTION_NONE:
+            default:
+                 free(tcp_half_open);
+                 break;
         }
     }
 
@@ -345,7 +351,6 @@ static void DeinitSpuriousActivityMonitor(void) {
          g_hash_table_destroy(g_tcp_half_open_ht);
     } 
 
-    //TBD - check delete queue
     if ( g_tcp_half_open_qu ) {
          g_async_queue_unref(g_tcp_half_open_qu);
     }
@@ -369,10 +374,19 @@ int StartMonitoringSpuriousActivity(MonitorSpActivityConf* monitor_sp_activity_c
 }
 
 int StopMonitoringSpuriousActivity(void) {
+    TcpHalfOpen* tcp_half_open = NULL;
     DEBUG_TRACE("SpAM: Stop monitoring spurious activity");
 
     g_end_is_nigh = 1;    
+
+    //hack: enqueue nop data
+    tcp_half_open = (TcpHalfOpen*) calloc(1, sizeof(TcpHalfOpen));
+    tcp_half_open->action = SA_ACTION_NONE;
+    g_async_queue_push(g_tcp_half_open_qu, tcp_half_open);
+
     pthread_join(g_tcp_half_open_ht_tid, NULL);
+    pthread_join(g_tcp_half_open_qu_tid, NULL);
+
     DeinitSpuriousActivityMonitor();
     return SA_OK;
 }
