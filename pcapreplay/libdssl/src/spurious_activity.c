@@ -256,7 +256,6 @@ static void* ProcessTcpHalfOpenQueueThread(void* data)
             case SA_ACTION_NONE:
             default:
                  free(tcp_half_open);
-                 DeleteTcpHalfOpenEntry(tcp_half_open);
                  break;
         }
     }
