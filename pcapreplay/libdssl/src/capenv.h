@@ -49,13 +49,17 @@ typedef int (*SynWorkFlow) (struct in_addr srcip, struct in_addr dstip);
 
 typedef int (*MirroringCallback) ( struct in_addr dstip);
 
+typedef int (*CapEnvIsEgressTrafficCallback)(struct CapEnv_* env,
+                                             struct  in_addr* src_ip, uint16_t src_port,
+                                             struct  in_addr* dst_ip, uint16_t dst_port);
+
 /* Packet capture environment */
 struct CapEnv_
 {
 	pcap_t*				pcap_adapter;
-    pcap_handler        handler;
+	pcap_handler			handler;
 	
-	dssl_SessionTable*	sessions;
+	dssl_SessionTable*		sessions;
 	DSSL_Env*			ssl_env;
 
 /*  
@@ -67,6 +71,8 @@ struct CapEnv_
 	
 	/* called when a new session is created before it is added to the session table */
 	CapEnvSessionCallback	session_callback;
+
+	CapEnvIsEgressTrafficCallback is_egress_traffic_callback;
 
 	/* called for UDP datagrams when UPD packet processing is enabled */
 	CapEnvDatagramCallback	datagram_callback;
@@ -89,6 +95,8 @@ void CapEnvSetSessionCallback( CapEnv* env, CapEnvSessionCallback callback, void
 
 /* CapEnvSetDatagramCallback - enables UDP packets processing and sets UDP callback routine */
 void CapEnvSetDatagramCallback( CapEnv* env, CapEnvDatagramCallback callback );
+
+void CapEnvSetIsEgressTrafficCallback( CapEnv* env, CapEnvIsEgressTrafficCallback callback );
 
 void* CapEnvGetUserData( CapEnv* env );
 

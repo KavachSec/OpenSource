@@ -116,6 +116,14 @@ int SessionInit( CapEnv* env, TcpSession* sess, DSSL_Pkt* pkt, NM_SessionType s_
 		StreamInit( &sess->serverStream, sess, 
 			INADDR_IP( pkt->ip_header->ip_dst ), PKT_TCP_DPORT( pkt ) );
 
+		if ( sess->env->is_egress_traffic_callback ) {
+			sess->egress_traffic = sess->env->is_egress_traffic_callback(env,
+			                                                             &pkt->ip_header->ip_src,
+			                                                             PKT_TCP_SPORT( pkt ),
+			                                                             &pkt->ip_header->ip_dst,
+			                                                             PKT_TCP_DPORT( pkt ));
+		}
+
 		is_server = 0;
 		break;
 
@@ -406,7 +414,9 @@ static int DetectSessionTypeCallback(struct _TcpStream* stream, DSSL_Pkt* pkt )
 	DEBUG_TRACE1( "\nTCP Session Type detected: %s", is_ssl ? "SSL" : "PlainText" ); 
 #endif
 
-	if (dir == ePacketDirFromClient) {
+	sess->type = is_ssl ? eSessionTypeSSL : eSessionTypeTcp;
+
+	if ( ( sess->type == eSessionTypeSSL ) && ( sess->egress_traffic == 1 ) ) {
 		/*
 		 * In egress direction, we will always process traffic as TCP.
 		 *
@@ -415,12 +425,6 @@ static int DetectSessionTypeCallback(struct _TcpStream* stream, DSSL_Pkt* pkt )
 		 * is configured for egress tcp capture. So interpret the traffic as TCP.
 		 */
 		sess->type = eSessionTypeTcp;
-	} else {
-		/*
-		 * Set the actual session type based on whether
-		 * the first packet was recognized as SSL ClientHello.
-		 */
-		sess->type = is_ssl ? eSessionTypeSSL : eSessionTypeTcp;
 	}
 
 	/* initialize session type specific data */
