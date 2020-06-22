@@ -32,35 +32,36 @@ extern "C" {
 struct _TcpSession
 {
 	/* Session type - TCP/SSL/Null */
-	NM_SessionType		type;
+	NM_SessionType			type;
 	/* session TCP stream objects */
 	TcpStream			clientStream;
 	TcpStream			serverStream;
 	/* next session in chain (used in session hash table)*/
-	struct _TcpSession*	next;
+	struct _TcpSession*		next;
 	/* session closure flag */
-	int					closing;
+	int				closing;
 	/* callback routines for data and error processing */
-	DataCallbackProc	data_callback;
-	ErrorCallbackProc	error_callback;
-	EventCallbackProc	event_callback;
+	DataCallbackProc		data_callback;
+	ErrorCallbackProc		error_callback;
+	EventCallbackProc		event_callback;
 	void*				user_data;
 	/* current packet timestamp (taken from the packet's header) */
-	struct timeval		packet_time;		
+	struct timeval			packet_time;
 	/* last session activity time */
 	time_t				last_update_time; 
 	/* reassembled packet callback */
 	int (*OnNewPacket)( struct _TcpStream* stream, DSSL_Pkt* pkt );
 	/* corresponding SSL session struct (SSL session type only) */
-	struct DSSL_Session_*	ssl_session;
+	struct DSSL_Session_*		ssl_session;
 	/* parent capture environment */
 	CapEnv*				env;
 	/* missing packets handling */
-	int							missing_packet_timeout; /**/
-	uint32_t					missing_packet_count;
+	int				missing_packet_timeout; /**/
+	uint32_t			missing_packet_count;
 	MissingPacketCallbackProc	missing_callback;
 	/* packet callback */
 	PacketCallbackProc		packet_callback;
+	int 				egress_traffic;
 };
 
 /* formats an ip:port parameters as a string into buff */
