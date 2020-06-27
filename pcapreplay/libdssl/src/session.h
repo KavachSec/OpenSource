@@ -61,7 +61,7 @@ struct _TcpSession
 	MissingPacketCallbackProc	missing_callback;
 	/* packet callback */
 	PacketCallbackProc		packet_callback;
-	int 				egress_traffic;
+	int 				inspect_ssl_traffic;
 };
 
 /* formats an ip:port parameters as a string into buff */

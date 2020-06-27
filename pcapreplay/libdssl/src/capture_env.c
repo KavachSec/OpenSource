@@ -206,11 +206,11 @@ void CapEnvSetDatagramCallback( CapEnv* env, CapEnvDatagramCallback callback )
 	env->datagram_callback = callback;
 }
 
-void CapEnvSetIsEgressTrafficCallback( CapEnv* env, CapEnvIsEgressTrafficCallback callback)
+void CapEnvSetInspectSSLTrafficCallback( CapEnv* env, CapEnvInspectSSLTrafficCallback callback)
 {
 	_ASSERT( env );
 
-	env->is_egress_traffic_callback = callback;
+	env->inspect_ssl_traffic_callback = callback;
 }
 
 void* CapEnvGetUserData( CapEnv* env )

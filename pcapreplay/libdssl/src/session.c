@@ -116,12 +116,12 @@ int SessionInit( CapEnv* env, TcpSession* sess, DSSL_Pkt* pkt, NM_SessionType s_
 		StreamInit( &sess->serverStream, sess, 
 			INADDR_IP( pkt->ip_header->ip_dst ), PKT_TCP_DPORT( pkt ) );
 
-		if ( sess->env->is_egress_traffic_callback ) {
-			sess->egress_traffic = sess->env->is_egress_traffic_callback(env,
-			                                                             &pkt->ip_header->ip_src,
-			                                                             PKT_TCP_SPORT( pkt ),
-			                                                             &pkt->ip_header->ip_dst,
-			                                                             PKT_TCP_DPORT( pkt ));
+		if ( sess->env->inspect_ssl_traffic_callback ) {
+			sess->inspect_ssl_traffic = sess->env->inspect_ssl_traffic_callback(env,
+			                                                                    &pkt->ip_header->ip_src,
+			                                                                    PKT_TCP_SPORT( pkt ),
+			                                                                    &pkt->ip_header->ip_dst,
+			                                                                    PKT_TCP_DPORT( pkt ));
 		}
 
 		is_server = 0;
@@ -416,14 +416,7 @@ static int DetectSessionTypeCallback(struct _TcpStream* stream, DSSL_Pkt* pkt )
 
 	sess->type = is_ssl ? eSessionTypeSSL : eSessionTypeTcp;
 
-	if ( ( sess->type == eSessionTypeSSL ) && ( sess->egress_traffic == 1 ) ) {
-		/*
-		 * In egress direction, we will always process traffic as TCP.
-		 *
-		 * In mesh7 datapath, egress SSL traffic is handled by sslproxy.
-		 * If egress SSL traffic is received by libdssl, it is because the port
-		 * is configured for egress tcp capture. So interpret the traffic as TCP.
-		 */
+	if ( ( sess->type == eSessionTypeSSL ) && ( sess->inspect_ssl_traffic == 0 ) ) {
 		sess->type = eSessionTypeTcp;
 	}
 
