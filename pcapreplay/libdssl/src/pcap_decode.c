@@ -84,7 +84,7 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
         DSSL_Pkt packet;
         int len = header->caplen;
         int skip_byte = 0;
-	int ip_hdrlen = 0;
+        int ip_hdrlen = 0;
         struct datalink_sll_header *sll_header = (struct datalink_sll_header *)pkt_data;
 
 #ifdef NM_TRACE_FRAME_COUNT
