@@ -841,7 +841,21 @@ int StreamProcessPacket( TcpStream* stream, DSSL_Pkt* pkt, int* new_ack )
 				peer->initial_seq = PKT_TCP_ACK(pkt);
 				peer->nextSeqExpected = peer->initial_seq;
 				peer->flags |= DSSL_TCPSTREAM_SENT_SYN;
+
+				if ( stream->session->env->inspect_ssl_traffic_callback ) {
+					stream->session->inspect_ssl_traffic = stream->session->env->inspect_ssl_traffic_callback(
+							stream->session->env,
+							&pkt->ip_header->ip_dst,
+							PKT_TCP_DPORT( pkt ),
+							&pkt->ip_header->ip_src,
+							PKT_TCP_SPORT( pkt ));
+
+					#ifdef NM_TRACE_TCP_STREAMS
+						DEBUG_TRACE1("\nMissing or out-of-order SYN detected, inspect ssl: %d", stream->session->inspect_ssl_traffic);
+					#endif
+				}
 			}
+
 		}
 		return StreamConsumePacket( stream, pkt, new_ack );
 	}
