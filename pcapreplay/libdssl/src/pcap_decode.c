@@ -84,6 +84,7 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
         DSSL_Pkt packet;
         int len = header->caplen;
         int skip_byte = 0;
+	int ip_hdrlen = 0;
         struct datalink_sll_header *sll_header = (struct datalink_sll_header *)pkt_data;
 
 #ifdef NM_TRACE_FRAME_COUNT
@@ -107,7 +108,7 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
 			( ntohs(sll_header->sll_protocol) == ETHERTYPE_IPV6 ))
         {
                 if(env->syn_work_flow_callback) {
-                    int ip_hdrlen = 0;
+                    ip_hdrlen = 0;
                     struct ip* ip_header = NULL;
                     struct tcphdr* tcp_header = NULL;
             
@@ -127,10 +128,12 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
                     DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN , len - SLL_HDR_LEN );
                 } else if ( env->mirroring_callback ) {
                     skip_byte = 50;
+		    ip_hdrlen = 0;
                     struct ip* outer_ip_header = NULL;
                     outer_ip_header = (struct ip*) (pkt_data + SLL_HDR_LEN );
                     struct ip* ip_header = NULL;
                     ip_header = (struct ip*) (pkt_data + SLL_HDR_LEN + skip_byte);
+		    ip_hdrlen = IP_HL(ip_header) << 2;
 
                    /*
                     printf("OUTER IP.\n");
@@ -142,7 +145,7 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
                     printf("Dst ip : %s (%d)\n", inet_ntoa(ip_header->ip_dst), ip_header->ip_dst );
                    */ 
 		    struct tcphdr* tcp_header = NULL;
-		    tcp_header = (struct tcphdr*) pkt_data + SLL_HDR_LEN + skip_byte;
+		    tcp_header = (struct tcphdr*) (pkt_data + SLL_HDR_LEN + ip_hdrlen + skip_byte);
 
                     if( env->mirroring_callback(ip_header->ip_dst) ) {
                       //printf("ip %s . Not a internal ip.", inet_ntoa(ip_header->ip_dst));
