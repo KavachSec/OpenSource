@@ -18,6 +18,9 @@ static MonitorSpActivityConf g_monitor_sp_activity_conf;
 static GHashTable* g_tcp_half_open_ht = NULL;
 static GAsyncQueue* g_tcp_half_open_qu = NULL;
 
+static uint32_t g_tcp_half_open_qu_size = 0;
+static uint32_t g_tcp_half_open_ht_size = 0;
+
 static pthread_t g_tcp_half_open_ht_tid;
 static pthread_t g_tcp_half_open_qu_tid;
 static pthread_mutex_t g_tcp_half_open_ht_lock;   
@@ -77,6 +80,8 @@ static int _AddTcpHalfOpenEntry(TcpHalfOpen* tcp_half_open) {
                         (gpointer) key,
                         (gpointer) tcp_half_open); 
 
+    g_tcp_half_open_ht_size++;
+
     DEBUG_TRACE("SpAM: Added tcp half open entry: %s, lookup table size: %u",
                 TcpHalfOpenEntryToString(tcp_half_open, buff, sizeof(buff)),
                 g_hash_table_size(g_tcp_half_open_ht));
@@ -96,7 +101,9 @@ static int _DeleteTcpHalfOpenEntry(TcpHalfOpen* tcp_half_open) {
     DEBUG_TRACE("SpAM: Deleting half open entry: %s",
                 TcpHalfOpenEntryToString(tcp_half_open, buff, sizeof(buff)));
 
-    g_hash_table_remove(g_tcp_half_open_ht, tcp_half_open->key_hash);
+    if ( g_hash_table_remove(g_tcp_half_open_ht, tcp_half_open->key_hash) == TRUE ) {
+        g_tcp_half_open_ht_size--;
+    }
 
     return SA_OK;
 }
@@ -172,6 +179,7 @@ static void EnqueueTcpHalfOpenEntry(TcpSession* sess, int action) {
                 TcpHalfOpenEntryToString(tcp_half_open, buff, sizeof(buff)));
 
     g_async_queue_push(g_tcp_half_open_qu, tcp_half_open);
+    g_tcp_half_open_qu_size++;
 }
 
 void AddTcpHalfOpenEntry(TcpHalfOpen* tcp_half_open) {
@@ -220,6 +228,7 @@ gboolean ProcessEmbryonicConnection(gpointer key, gpointer value, gpointer data)
             free(tcp_half_open);
         }
 
+        g_tcp_half_open_ht_size--;
         return TRUE;
     }
 
@@ -240,6 +249,8 @@ static void* ProcessTcpHalfOpenQueueThread(void* data)
         tcp_half_open = g_async_queue_timeout_pop(g_tcp_half_open_qu, 120000000);
 
         if ( !tcp_half_open ) { continue; }
+
+        g_tcp_half_open_qu_size--;
 
         DEBUG_TRACE("SpAM: Dequeued tcp half open entry: %s",
                     TcpHalfOpenEntryToString(tcp_half_open, buff, sizeof(buff)));
@@ -410,4 +421,12 @@ void AnalyzeSpActivity(TcpSession* sess, void* data, int data_type) {
 
         EnqueueTcpHalfOpenEntry(sess, action);
     } 
+}
+
+uint32_t GetEmbryonicConnectionQueueSize(void) {
+    return g_tcp_half_open_qu_size;
+}
+
+uint32_t GetEmbryonicConnectionHashTableSize(void) {
+    return g_tcp_half_open_ht_size;
 }

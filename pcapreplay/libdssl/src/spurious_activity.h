@@ -44,6 +44,9 @@ typedef struct _MonitorSpActivityConf {
 int StartMonitoringSpuriousActivity(MonitorSpActivityConf* MonitorSpActivityConf);
 int StopMonitoringSpuriousActivity(void);
 
+uint32_t GetEmbryonicConnectionQueueSize(void);
+uint32_t GetEmbryonicConnectionHashTableSize(void);
+
 #ifdef __cplusplus
 }
 #endif
