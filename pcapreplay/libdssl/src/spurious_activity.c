@@ -173,6 +173,11 @@ static void EnqueueTcpHalfOpenEntry(TcpSession* sess, int action) {
     }
 
     tcp_half_open = (TcpHalfOpen*) calloc(1, sizeof(TcpHalfOpen));
+
+    if ( !tcp_half_open ) {
+        return;
+    }
+
     InitTcpHalfOpenEntry(sess, action, tcp_half_open);
 
     DEBUG_TRACE("SpAM: Enqueue tcp half open entry: %s",
@@ -249,9 +254,9 @@ static void* ProcessTcpHalfOpenQueueThread(void* data)
         //tcp_half_open = g_async_queue_timeout_pop(g_tcp_half_open_qu, 120000000);
         tcp_half_open = g_async_queue_pop(g_tcp_half_open_qu);
 
-        if ( !tcp_half_open ) { continue; }
-
         g_tcp_half_open_qu_size--;
+
+        if ( !tcp_half_open ) { continue; }
 
         DEBUG_TRACE("SpAM: Dequeued tcp half open entry: %s",
                     TcpHalfOpenEntryToString(tcp_half_open, buff, sizeof(buff)));
@@ -406,6 +411,7 @@ int StopMonitoringSpuriousActivity(void) {
 void AnalyzeSpActivity(TcpSession* sess, void* data, int data_type) {
     int flags = 0;
     int action = SA_ACTION_NONE;
+    gboolean enque = FALSE;
 
     if ( !g_sp_activity_monitor_initialized ) {
         return;
@@ -416,12 +422,16 @@ void AnalyzeSpActivity(TcpSession* sess, void* data, int data_type) {
 
         if( ( flags & TH_SYN ) && ( !( flags & TH_ACK ) ) ) {
             action = SA_ACTION_ENTRY_ADD;
+            enque = TRUE;
         } else if( ( flags & TH_SYN ) && ( flags & TH_ACK ) ) {
             action = SA_ACTION_ENTRY_DELETE;
+            enque = TRUE;
         }
 
-        EnqueueTcpHalfOpenEntry(sess, action);
-    } 
+        if ( enque == TRUE ) {
+            EnqueueTcpHalfOpenEntry(sess, action);
+        }
+    }
 }
 
 uint32_t GetEmbryonicConnectionQueueSize(void) {
