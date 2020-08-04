@@ -20,6 +20,7 @@ static GAsyncQueue* g_tcp_half_open_qu = NULL;
 
 static uint32_t g_tcp_half_open_qu_size = 0;
 static uint32_t g_tcp_half_open_ht_size = 0;
+static uint32_t g_num_of_embryonic_conn_detected = 0;
 
 static pthread_t g_tcp_half_open_ht_tid;
 static pthread_t g_tcp_half_open_qu_tid;
@@ -228,6 +229,7 @@ gboolean ProcessEmbryonicConnection(gpointer key, gpointer value, gpointer data)
                     TcpHalfOpenEntryToString(tcp_half_open, buff, sizeof(buff)));
 
         if ( g_monitor_sp_activity_conf.process_tcp_half_open_cb ) {
+            g_num_of_embryonic_conn_detected++;
             g_monitor_sp_activity_conf.process_tcp_half_open_cb(tcp_half_open);
         } else {
             free(tcp_half_open);
@@ -440,4 +442,8 @@ uint32_t GetEmbryonicConnectionQueueSize(void) {
 
 uint32_t GetEmbryonicConnectionHashTableSize(void) {
     return g_tcp_half_open_ht_size;
+}
+
+uint32_t GetNumberOfEmbryonicConnectionDetected(void) {
+    return g_num_of_embryonic_conn_detected;
 }

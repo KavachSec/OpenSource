@@ -46,6 +46,7 @@ int StopMonitoringSpuriousActivity(void);
 
 uint32_t GetEmbryonicConnectionQueueSize(void);
 uint32_t GetEmbryonicConnectionHashTableSize(void);
+uint32_t GetNumberOfEmbryonicConnectionDetected(void);
 
 #ifdef __cplusplus
 }
