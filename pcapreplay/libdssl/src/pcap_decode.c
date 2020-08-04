@@ -21,6 +21,7 @@
 #include <string.h>
 #include "stdinc.h"
 #include "decode.h"
+#include "spurious_activity_ex.h"
 
 void pcap_cb_ethernet( u_char *ptr, const struct pcap_pkthdr *header, const u_char *pkt_data );
 void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *pkt_data );
@@ -115,6 +116,8 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
                     ip_header = (struct ip*) (pkt_data + SLL_HDR_LEN);
                     ip_hdrlen = IP_HL(ip_header) << 2;
                     tcp_header = (struct tcphdr*) (pkt_data + SLL_HDR_LEN + ip_hdrlen);
+
+                    AnalyzeSpActivityV2(ip_header, tcp_header);
             
                     if( (tcp_header->th_flags & TH_SYN) ){
                         if( (tcp_header->th_flags & TH_ACK) ){
@@ -146,6 +149,8 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
 		    struct tcphdr* tcp_header = NULL;
 		    tcp_header = (struct tcphdr*) (pkt_data + SLL_HDR_LEN + ip_hdrlen + skip_byte);
 
+                    AnalyzeSpActivityV2(ip_header, tcp_header);
+
                     if( env->mirroring_callback(ip_header->ip_dst) ) {
                       //printf("ip %s . Not a internal ip.", inet_ntoa(ip_header->ip_dst));
                       DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN + skip_byte, len - SLL_HDR_LEN - skip_byte);        
@@ -170,7 +175,16 @@ void pcap_cb_sll( u_char *ptr, const struct pcap_pkthdr *header, const u_char *p
                 	}
                     }
                 } else {
-                  DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN , len - SLL_HDR_LEN );
+                    ip_hdrlen = 0;
+                    struct ip* ip_header = NULL;
+                    struct tcphdr* tcp_header = NULL;
+
+                    ip_header = (struct ip*) (pkt_data + SLL_HDR_LEN);
+                    ip_hdrlen = IP_HL(ip_header) << 2;
+                    tcp_header = (struct tcphdr*) (pkt_data + SLL_HDR_LEN + ip_hdrlen);
+
+                    AnalyzeSpActivityV2(ip_header, tcp_header);
+                    DecodeIpPacket( env, &packet, pkt_data + SLL_HDR_LEN , len - SLL_HDR_LEN );
                 }
         }
 }
