@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 void AnalyzeSpActivity(TcpSession* sess, void* data, int data_type);
+void AnalyzeSpActivityV2(struct ip* ip_header, struct tcphdr* tcp_header);
 
 #ifdef __cplusplus
 }

@@ -18,6 +18,10 @@ static MonitorSpActivityConf g_monitor_sp_activity_conf;
 static GHashTable* g_tcp_half_open_ht = NULL;
 static GAsyncQueue* g_tcp_half_open_qu = NULL;
 
+static uint32_t g_tcp_half_open_qu_size = 0;
+static uint32_t g_tcp_half_open_ht_size = 0;
+static uint32_t g_num_of_embryonic_conn_detected = 0;
+
 static pthread_t g_tcp_half_open_ht_tid;
 static pthread_t g_tcp_half_open_qu_tid;
 static pthread_mutex_t g_tcp_half_open_ht_lock;   
@@ -77,6 +81,8 @@ static int _AddTcpHalfOpenEntry(TcpHalfOpen* tcp_half_open) {
                         (gpointer) key,
                         (gpointer) tcp_half_open); 
 
+    g_tcp_half_open_ht_size++;
+
     DEBUG_TRACE("SpAM: Added tcp half open entry: %s, lookup table size: %u",
                 TcpHalfOpenEntryToString(tcp_half_open, buff, sizeof(buff)),
                 g_hash_table_size(g_tcp_half_open_ht));
@@ -96,7 +102,11 @@ static int _DeleteTcpHalfOpenEntry(TcpHalfOpen* tcp_half_open) {
     DEBUG_TRACE("SpAM: Deleting half open entry: %s",
                 TcpHalfOpenEntryToString(tcp_half_open, buff, sizeof(buff)));
 
-    g_hash_table_remove(g_tcp_half_open_ht, tcp_half_open->key_hash);
+    if ( g_hash_table_remove(g_tcp_half_open_ht, tcp_half_open->key_hash) == TRUE ) {
+        g_tcp_half_open_ht_size--;
+    } else {
+        free(tcp_half_open);
+    }
 
     return SA_OK;
 }
@@ -166,12 +176,18 @@ static void EnqueueTcpHalfOpenEntry(TcpSession* sess, int action) {
     }
 
     tcp_half_open = (TcpHalfOpen*) calloc(1, sizeof(TcpHalfOpen));
+
+    if ( !tcp_half_open ) {
+        return;
+    }
+
     InitTcpHalfOpenEntry(sess, action, tcp_half_open);
 
     DEBUG_TRACE("SpAM: Enqueue tcp half open entry: %s",
                 TcpHalfOpenEntryToString(tcp_half_open, buff, sizeof(buff)));
 
     g_async_queue_push(g_tcp_half_open_qu, tcp_half_open);
+    g_tcp_half_open_qu_size++;
 }
 
 void AddTcpHalfOpenEntry(TcpHalfOpen* tcp_half_open) {
@@ -209,17 +225,15 @@ gboolean ProcessEmbryonicConnection(gpointer key, gpointer value, gpointer data)
                 tv->tv_sec);
 
     if ( ( tv->tv_sec - tcp_half_open->stime ) >=  PTHO_THRESHOLD_TIME ) {
-        free(key);
-
         DEBUG_TRACE("SpAM: Detected tcp half open conneciton: %s",
                     TcpHalfOpenEntryToString(tcp_half_open, buff, sizeof(buff)));
 
         if ( g_monitor_sp_activity_conf.process_tcp_half_open_cb ) {
+            g_num_of_embryonic_conn_detected++;
             g_monitor_sp_activity_conf.process_tcp_half_open_cb(tcp_half_open);
-        } else {
-            free(tcp_half_open);
         }
 
+        g_tcp_half_open_ht_size--;
         return TRUE;
     }
 
@@ -237,9 +251,12 @@ static void* ProcessTcpHalfOpenQueueThread(void* data)
     while ( !g_end_is_nigh ) {
         //TBD - Check if pthread_cond_wait and pthread_cond_signal would be
         //      better approach than sleep+timeout
-        tcp_half_open = g_async_queue_timeout_pop(g_tcp_half_open_qu, 120000000);
+        //tcp_half_open = g_async_queue_timeout_pop(g_tcp_half_open_qu, 120000000);
+        tcp_half_open = g_async_queue_pop(g_tcp_half_open_qu);
 
         if ( !tcp_half_open ) { continue; }
+
+        if ( g_tcp_half_open_qu_size != 0 ) { g_tcp_half_open_qu_size--; }
 
         DEBUG_TRACE("SpAM: Dequeued tcp half open entry: %s",
                     TcpHalfOpenEntryToString(tcp_half_open, buff, sizeof(buff)));
@@ -286,9 +303,9 @@ static void* ProcessTcpHalfOpenEntriesThread(void* data) {
             DEBUG_TRACE("SpAM: Processing all tcp half open entries");
 
             gettimeofday(&tv, NULL);
-            g_hash_table_foreach_steal(g_tcp_half_open_ht,
-                                       ProcessEmbryonicConnection,
-                                       &tv);
+            g_hash_table_foreach_remove(g_tcp_half_open_ht,
+                                        ProcessEmbryonicConnection,
+                                        &tv);
         }
 
         pthread_mutex_unlock(&g_tcp_half_open_ht_lock);
@@ -392,22 +409,94 @@ int StopMonitoringSpuriousActivity(void) {
 }
 
 void AnalyzeSpActivity(TcpSession* sess, void* data, int data_type) {
-    int flags = 0;
+    uint32_t flags = 0;
     int action = SA_ACTION_NONE;
+    gboolean enque = FALSE;
 
     if ( !g_sp_activity_monitor_initialized ) {
         return;
     }
 
     if ( data_type == SA_DATA_TYPE_TCP_FLAGS ) {
-        flags = *((int *)data);
+        flags = *((uint8_t *)data);
 
-        if( ( flags & TH_SYN ) && ( !( flags & TH_ACK ) ) ) {
+        if( ( flags & 0xFF ) == TH_SYN ) {
             action = SA_ACTION_ENTRY_ADD;
+            enque = TRUE;
         } else if( ( flags & TH_SYN ) && ( flags & TH_ACK ) ) {
             action = SA_ACTION_ENTRY_DELETE;
+            enque = TRUE;
         }
 
-        EnqueueTcpHalfOpenEntry(sess, action);
-    } 
+        if ( enque == TRUE ) {
+            EnqueueTcpHalfOpenEntry(sess, action);
+        }
+    }
+}
+
+void AnalyzeSpActivityV2(struct ip* ip_header, struct tcphdr* tcp_header) {
+    #ifdef NM_ENABLE_TRACE
+    char buff[256] = {0,};
+    #endif
+    uint32_t flags = 0;
+    int action = SA_ACTION_NONE;
+    gboolean enque = FALSE;
+    TcpHalfOpen* tcp_half_open = NULL;
+
+    if ( !g_sp_activity_monitor_initialized ||
+         !ip_header || !tcp_header ) {
+        return;
+    }
+
+    flags = tcp_header->th_flags;
+
+    if( ( flags & 0xFF ) == TH_SYN ) {
+        action = SA_ACTION_ENTRY_ADD;
+    } else if( ( flags & TH_SYN ) && ( flags & TH_ACK ) ) {
+        action = SA_ACTION_ENTRY_DELETE;
+    } else {
+        return;
+    }
+
+    tcp_half_open = (TcpHalfOpen*) calloc(1, sizeof(TcpHalfOpen));
+
+    if ( !tcp_half_open ) {
+        return;
+    }
+
+    if ( ( flags & 0xFF ) == TH_SYN ) { // from client
+        tcp_half_open->server_ip = INADDR_IP( ip_header->ip_dst );
+        tcp_half_open->client_ip = INADDR_IP( ip_header->ip_src );
+        tcp_half_open->server_port = ntohs(tcp_header->th_dport);
+        tcp_half_open->client_port = ntohs(tcp_header->th_sport);
+    } else { //from server
+        tcp_half_open->server_ip = INADDR_IP( ip_header->ip_src );
+        tcp_half_open->client_ip = INADDR_IP( ip_header->ip_dst );
+        tcp_half_open->server_port = ntohs(tcp_header->th_sport);
+        tcp_half_open->client_port = ntohs(tcp_header->th_dport);
+    }
+
+    tcp_half_open->count = 1;
+    tcp_half_open->stime = time(NULL);
+    tcp_half_open->action = action;
+
+    GetTcpHalfOpenKeyHash(tcp_half_open, tcp_half_open->key_hash, TCP_HALF_OPEN_KEY_MAX_LEN);
+
+    DEBUG_TRACE("SpAM: AnalyzeSpActivityV2 - Init tcp half open entry from pkt: %s",
+                TcpHalfOpenEntryToString(tcp_half_open, buff, sizeof(buff)));
+
+    g_async_queue_push(g_tcp_half_open_qu, tcp_half_open);
+    g_tcp_half_open_qu_size++;
+}
+
+uint32_t GetEmbryonicConnectionQueueSize(void) {
+    return g_tcp_half_open_qu_size;
+}
+
+uint32_t GetEmbryonicConnectionHashTableSize(void) {
+    return g_tcp_half_open_ht_size;
+}
+
+uint32_t GetNumberOfEmbryonicConnectionDetected(void) {
+    return g_num_of_embryonic_conn_detected;
 }
