@@ -104,9 +104,9 @@ static int _DeleteTcpHalfOpenEntry(TcpHalfOpen* tcp_half_open) {
 
     if ( g_hash_table_remove(g_tcp_half_open_ht, tcp_half_open->key_hash) == TRUE ) {
         g_tcp_half_open_ht_size--;
-    } else {
-        free(tcp_half_open);
     }
+
+    free(tcp_half_open);
 
     return SA_OK;
 }
