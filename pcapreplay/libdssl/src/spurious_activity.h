@@ -8,7 +8,7 @@ extern "C" {
 #define SA_OK     0
 #define SA_ERROR  1
 
-#define PTHO_WAIT_TIME_SEC 60
+#define PTHO_WAIT_TIME_SEC 20
 #define PTHO_THRESHOLD_TIME 10  //3sec 
 
 #define TCP_HALF_OPEN_KEY_MAX_LEN 60
